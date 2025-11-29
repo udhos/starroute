@@ -55,19 +55,26 @@ func newGame() *game {
 	g := &game{ebitenImage: ebitenImage}
 
 	//
-	// Add one sprite to the game.
+	// Add sprites.
 	//
 
 	w, h := ebitenImage.Bounds().Dx(), ebitenImage.Bounds().Dy()
-	x, y := 50, 50
 
 	spr := sprite{
-		x:      float64(x),
-		y:      float64(y),
+		x:      50,
+		y:      50,
 		width:  w,
 		height: h,
 	}
 	g.sprites = append(g.sprites, &spr)
+
+	spr2 := sprite{
+		x:      100,
+		y:      100,
+		width:  w,
+		height: h,
+	}
+	g.sprites = append(g.sprites, &spr2)
 
 	return g
 }
