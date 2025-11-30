@@ -143,36 +143,39 @@ func (g *game) Draw(screen *ebiten.Image) {
 		screen.DrawImage(g.ebitenImage, &g.op)
 
 		//
-		// Draw arrow for direction indication
+		// Draw debug arrow for sprite intrinsic orientation.
 		//
-		arrowLength := 20.0
-		arrowX := s.x + centerX + arrowLength*math.Cos(angleRad)
-		arrowY := s.y + centerY + arrowLength*math.Sin(angleRad)
+		colorRed := color.RGBA{0xff, 0, 0, 0xff}
+		drawDebugArrow(screen, float64(s.x+centerX), float64(s.y+centerY),
+			angleRad-angleNativeRad, 20, 3, colorRed)
 
-		var path vector.Path
-		path.MoveTo(float32(s.x+centerX), float32(s.y+centerY))
-		path.LineTo(float32(arrowX), float32(arrowY))
-
-		strokeOp := &vector.StrokeOptions{}
-		/*
-			strokeOp.LineCap = cap
-			strokeOp.LineJoin = join
-			strokeOp.MiterLimit = miterLimit
-			strokeOp.Width = float32(r / 2)
-		*/
-		strokeOp.Width = 2.0
-
-		drawOp := &vector.DrawPathOptions{}
-
-		// set color to yellow
-		yellow := color.RGBA{0xff, 0xff, 0, 0xff}
-		drawOp.ColorScale.ScaleWithColor(yellow)
-
-		drawOp.AntiAlias = false
-		vector.StrokePath(screen, &path, strokeOp, drawOp)
-
+		//
+		// Draw debug arrow for sprite actual orientation.
+		//
+		colorYellow := color.RGBA{0xff, 0xff, 0, 0xff}
+		drawDebugArrow(screen, float64(s.x+centerX), float64(s.y+centerY),
+			angleRad, 30, 1, colorYellow)
 	}
 
+}
+
+func drawDebugArrow(screen *ebiten.Image, x, y, angle, lenght, width float64, arrowColor color.RGBA) {
+	arrowX := x + lenght*math.Cos(angle)
+	arrowY := y + lenght*math.Sin(angle)
+
+	var path vector.Path
+	path.MoveTo(float32(x), float32(y))
+	path.LineTo(float32(arrowX), float32(arrowY))
+
+	strokeOp := &vector.StrokeOptions{}
+	strokeOp.Width = float32(width)
+
+	drawOp := &vector.DrawPathOptions{}
+
+	drawOp.ColorScale.ScaleWithColor(arrowColor)
+
+	drawOp.AntiAlias = false
+	vector.StrokePath(screen, &path, strokeOp, drawOp)
 }
 
 // Layout accepts an outside size, which is a window size on desktop, and
