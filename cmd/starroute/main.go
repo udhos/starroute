@@ -4,25 +4,30 @@ package main
 import (
 	"bytes"
 	"image"
+	"image/color"
 	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
+
+const pi2 = 2 * math.Pi
 
 type sprite struct {
 	x, y          float64
 	width, height int
 	angle         float64
+	angleNative   float64 // undo this intrinsic rotate of image to point image to zero angle (right)
 }
 
-const maxAngle = 100 // custom number of angles in the circle
+const maxAngle = float64(100) // custom number of angles in the circle
 
 func (s *sprite) update() {
 	// move sprint etc
-	s.angle = math.Mod(s.angle+1, maxAngle)
+	//s.angle = math.Mod(s.angle+1, maxAngle)
 }
 
 // game implements ebiten.Game interface.
@@ -32,13 +37,14 @@ type game struct {
 	ebitenImage *ebiten.Image
 }
 
-func (g *game) addSprite(x, y float64, spriteImage *ebiten.Image) {
+func (g *game) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image) {
 	w, h := spriteImage.Bounds().Dx(), spriteImage.Bounds().Dy()
 	spr := sprite{
-		x:      x,
-		y:      y,
-		width:  w,
-		height: h,
+		x:           x,
+		y:           y,
+		width:       w,
+		height:      h,
+		angleNative: angleNative,
 	}
 	g.sprites = append(g.sprites, &spr)
 }
@@ -69,8 +75,9 @@ func newGame() *game {
 	// Add sprites.
 	//
 
-	g.addSprite(50, 50, ebitenImage)
-	g.addSprite(100, 100, ebitenImage)
+	circleQuarter := maxAngle / 4
+	g.addSprite(50, 50, 0, ebitenImage)
+	g.addSprite(100, 100, circleQuarter, ebitenImage)
 
 	return g
 }
@@ -110,11 +117,60 @@ func (g *game) Draw(screen *ebiten.Image) {
 	for i := 0; i < len(g.sprites); i++ {
 		s := g.sprites[i]
 		g.op.GeoM.Reset()
-		g.op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
-		g.op.GeoM.Rotate(2 * math.Pi * float64(s.angle) / maxAngle)
-		g.op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
+		centerX := float64(w) / 2
+		centerY := float64(h) / 2
+
+		// move the rotation center to the origin
+		g.op.GeoM.Translate(-centerX, -centerY)
+
+		// rotate around the origin
+
+		// undo intrinsic image rotation
+		angleNativeRad := pi2 * float64(s.angleNative) / maxAngle
+		g.op.GeoM.Rotate(-angleNativeRad)
+
+		// apply actual rotation
+		angleRad := pi2 * float64(s.angle) / maxAngle
+		g.op.GeoM.Rotate(angleRad)
+
+		// undo the translation used to move the rotation center
+		g.op.GeoM.Translate(centerX, centerY)
+
+		// apply the actual object's position
 		g.op.GeoM.Translate(float64(s.x), float64(s.y))
+
 		screen.DrawImage(g.ebitenImage, &g.op)
+
+		//
+		// Draw arrow for direction indication
+		//
+		arrowLength := 20.0
+		arrowX := s.x + centerX + arrowLength*math.Cos(angleRad)
+		arrowY := s.y + centerY + arrowLength*math.Sin(angleRad)
+
+		var path vector.Path
+		path.MoveTo(float32(s.x+centerX), float32(s.y+centerY))
+		path.LineTo(float32(arrowX), float32(arrowY))
+
+		strokeOp := &vector.StrokeOptions{}
+		/*
+			strokeOp.LineCap = cap
+			strokeOp.LineJoin = join
+			strokeOp.MiterLimit = miterLimit
+			strokeOp.Width = float32(r / 2)
+		*/
+		strokeOp.Width = 2.0
+
+		drawOp := &vector.DrawPathOptions{}
+
+		// set color to yellow
+		yellow := color.RGBA{0xff, 0xff, 0, 0xff}
+		drawOp.ColorScale.ScaleWithColor(yellow)
+
+		drawOp.AntiAlias = false
+		vector.StrokePath(screen, &path, strokeOp, drawOp)
+
 	}
 
 }
