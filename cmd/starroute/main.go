@@ -32,6 +32,17 @@ type game struct {
 	ebitenImage *ebiten.Image
 }
 
+func (g *game) addSprite(x, y float64, spriteImage *ebiten.Image) {
+	w, h := spriteImage.Bounds().Dx(), spriteImage.Bounds().Dy()
+	spr := sprite{
+		x:      x,
+		y:      y,
+		width:  w,
+		height: h,
+	}
+	g.sprites = append(g.sprites, &spr)
+}
+
 func newGame() *game {
 
 	//
@@ -58,23 +69,8 @@ func newGame() *game {
 	// Add sprites.
 	//
 
-	w, h := ebitenImage.Bounds().Dx(), ebitenImage.Bounds().Dy()
-
-	spr := sprite{
-		x:      50,
-		y:      50,
-		width:  w,
-		height: h,
-	}
-	g.sprites = append(g.sprites, &spr)
-
-	spr2 := sprite{
-		x:      100,
-		y:      100,
-		width:  w,
-		height: h,
-	}
-	g.sprites = append(g.sprites, &spr2)
+	g.addSprite(50, 50, ebitenImage)
+	g.addSprite(100, 100, ebitenImage)
 
 	return g
 }
