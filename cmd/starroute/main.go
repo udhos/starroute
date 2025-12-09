@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"image/color"
 	"log"
 	"math"
@@ -34,6 +35,8 @@ func (s *sprite) update() {
 
 // game implements ebiten.Game interface.
 type game struct {
+	frozen bool
+
 	op      ebiten.DrawImageOptions
 	sprites []*sprite
 	//ebitenImage *ebiten.Image
@@ -71,14 +74,15 @@ func newGame() *game {
 		// FIXME: these should come from tilemap data
 		tileSize             = 16
 		tileLayerScreenWidth = 240
+		tileLayerXCount      = 15
 	)
 
 	g := &game{
-		tiles: newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerScreenWidth),
+		tiles: newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerXCount),
 
 		// See comment in game.Layout method.
 		screenWidth:  320,
-		screenHeight: 240,
+		screenHeight: 320,
 	}
 
 	// See comment in game.Layout method.
@@ -98,6 +102,10 @@ func newGame() *game {
 // The default value is 1/60 [s], then Update is called 60 times per second by
 // default (i.e. an Ebitengine game works in 60 ticks-per-second).
 func (g *game) Update() error {
+
+	if g.frozen {
+		return nil
+	}
 
 	// Update all sprites.
 	for _, spr := range g.sprites {
@@ -205,11 +213,18 @@ func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
+
+	var freeze bool
+	flag.BoolVar(&freeze, "freeze", false, "freeze game update")
+	flag.Parse()
+
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("Hello, World!")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
 	g := newGame()
+
+	g.frozen = freeze
 
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)

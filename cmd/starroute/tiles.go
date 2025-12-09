@@ -11,13 +11,13 @@ import (
 )
 
 type tiles struct {
-	tilesImage           *ebiten.Image
-	tileSize             int
-	layers               [][]int
-	tileLayerScreenWidth int
+	tilesImage      *ebiten.Image
+	tileSize        int
+	layers          [][]int
+	tileLayerXCount int
 }
 
-func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerScreenWidth int) *tiles {
+func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *tiles {
 
 	// Decode an image from the image file's byte slice.
 	img, _, err := image.Decode(r)
@@ -26,10 +26,10 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerScreenWidth in
 	}
 
 	ts := &tiles{
-		tilesImage:           ebiten.NewImageFromImage(img),
-		tileSize:             tileSize,
-		layers:               layers,
-		tileLayerScreenWidth: tileLayerScreenWidth,
+		tilesImage:      ebiten.NewImageFromImage(img),
+		tileSize:        tileSize,
+		layers:          layers,
+		tileLayerXCount: tileLayerXCount,
 	}
 
 	log.Printf("Tile size: %d", tileSize)
@@ -53,7 +53,7 @@ func (ts *tiles) draw(screen *ebiten.Image) {
 	// For more detail, see https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
 
 	// number of tiles per row defined in the tile layer
-	xCount := ts.tileLayerScreenWidth / tileSize // 240 / 16 = 15
+	xCount := ts.tileLayerXCount
 
 	// number of tiles in the tiles image
 	tileImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
