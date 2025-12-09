@@ -3,7 +3,6 @@ package main
 
 import (
 	"bytes"
-	"image"
 	"image/color"
 	"log"
 	"math"
@@ -14,27 +13,31 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-const pi2 = 2 * math.Pi
+const (
+	pi2       = 2 * math.Pi
+	maxAngle  = float64(100) // custom number of angles in the circle
+	oneEighth = maxAngle / 8
+)
 
 type sprite struct {
 	x, y          float64
 	width, height int
 	angle         float64
 	angleNative   float64 // undo this intrinsic rotate of image to point image to zero angle (right)
+	image         *ebiten.Image
 }
-
-const maxAngle = float64(100) // custom number of angles in the circle
 
 func (s *sprite) update() {
 	// move sprint etc
 	//s.angle = math.Mod(s.angle+1, maxAngle)
+	//s.angle = oneEighth
 }
 
 // game implements ebiten.Game interface.
 type game struct {
-	op          ebiten.DrawImageOptions
-	sprites     []*sprite
-	ebitenImage *ebiten.Image
+	op      ebiten.DrawImageOptions
+	sprites []*sprite
+	//ebitenImage *ebiten.Image
 }
 
 func (g *game) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image) {
@@ -45,6 +48,7 @@ func (g *game) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image) {
 		width:       w,
 		height:      h,
 		angleNative: angleNative,
+		image:       spriteImage,
 	}
 	g.sprites = append(g.sprites, &spr)
 }
@@ -55,29 +59,16 @@ func newGame() *game {
 	// Load an image from the embedded image data.
 	//
 
-	// Decode an image from the image file's byte slice.
-	img, _, err := image.Decode(bytes.NewReader(images.Ebiten_png))
-	if err != nil {
-		log.Fatalf("newGame: %v", err)
-	}
-	origEbitenImage := ebiten.NewImageFromImage(img)
+	ebitenImage := createImage(bytes.NewReader(images.Ebiten_png))
 
-	s := origEbitenImage.Bounds().Size()
-	ebitenImage := ebiten.NewImage(s.X, s.Y)
-
-	op := &ebiten.DrawImageOptions{}
-	op.ColorScale.ScaleAlpha(0.5)
-	ebitenImage.DrawImage(origEbitenImage, op)
-
-	g := &game{ebitenImage: ebitenImage}
+	g := &game{}
 
 	//
 	// Add sprites.
 	//
 
-	circleQuarter := maxAngle / 4
 	g.addSprite(50, 50, 0, ebitenImage)
-	g.addSprite(100, 100, circleQuarter, ebitenImage)
+	g.addSprite(100, 100, oneEighth, ebitenImage)
 
 	return g
 }
@@ -113,10 +104,12 @@ func (g *game) Draw(screen *ebiten.Image) {
 	// some conditions e.g. all the rendering sources and targets are same.
 	// For more detail, see:
 	// https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
-	w, h := g.ebitenImage.Bounds().Dx(), g.ebitenImage.Bounds().Dy()
+
 	for i := 0; i < len(g.sprites); i++ {
 		s := g.sprites[i]
 		g.op.GeoM.Reset()
+
+		w, h := s.image.Bounds().Dx(), s.image.Bounds().Dy()
 
 		centerX := float64(w) / 2
 		centerY := float64(h) / 2
@@ -140,17 +133,19 @@ func (g *game) Draw(screen *ebiten.Image) {
 		// apply the actual object's position
 		g.op.GeoM.Translate(float64(s.x), float64(s.y))
 
-		screen.DrawImage(g.ebitenImage, &g.op)
+		screen.DrawImage(s.image, &g.op)
 
 		//
-		// Draw debug arrow for sprite intrinsic orientation.
+		// Red show how much the sprite was rotated back (counter clockwise) to
+		// make its front point to the right (zero angle).
 		//
 		colorRed := color.RGBA{0xff, 0, 0, 0xff}
 		drawDebugArrow(screen, float64(s.x+centerX), float64(s.y+centerY),
 			angleRad-angleNativeRad, 20, 3, colorRed)
 
 		//
-		// Draw debug arrow for sprite actual orientation.
+		// Yellow show the sprint front direction and should point to
+		// right (zero angle).
 		//
 		colorYellow := color.RGBA{0xff, 0xff, 0, 0xff}
 		drawDebugArrow(screen, float64(s.x+centerX), float64(s.y+centerY),
