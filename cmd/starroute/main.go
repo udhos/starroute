@@ -8,7 +8,6 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -29,7 +28,7 @@ type sprite struct {
 
 func (s *sprite) update() {
 	// move sprint etc
-	//s.angle = math.Mod(s.angle+1, maxAngle)
+	s.angle = math.Mod(s.angle+1, maxAngle)
 	//s.angle = oneEighth
 }
 
@@ -38,6 +37,11 @@ type game struct {
 	op      ebiten.DrawImageOptions
 	sprites []*sprite
 	//ebitenImage *ebiten.Image
+	tiles *tiles
+
+	// See comment in game.Layout method.
+	screenWidth  int
+	screenHeight int
 }
 
 func (g *game) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image) {
@@ -59,9 +63,26 @@ func newGame() *game {
 	// Load an image from the embedded image data.
 	//
 
-	ebitenImage := createImage(bytes.NewReader(images.Ebiten_png))
+	const scaleAlpha = 0.8
 
-	g := &game{}
+	ebitenImage := createImage(bytes.NewReader(images.Ebiten_png), scaleAlpha)
+
+	const (
+		// FIXME: these should come from tilemap data
+		tileSize             = 16
+		tileLayerScreenWidth = 240
+	)
+
+	g := &game{
+		tiles: newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerScreenWidth),
+
+		// See comment in game.Layout method.
+		screenWidth:  320,
+		screenHeight: 240,
+	}
+
+	// See comment in game.Layout method.
+	log.Printf("Game screen size: %dx%d", g.screenWidth, g.screenHeight)
 
 	//
 	// Add sprites.
@@ -96,7 +117,8 @@ func (g *game) Update() error {
 // ebiten.Image objects. screen argument is the final destination of
 // rendering. The window shows the final state of screen every frame.
 func (g *game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+
+	g.tiles.draw(screen)
 
 	// Draw each sprite.
 	// DrawImage can be called many many times, but in the implementation,
@@ -179,7 +201,7 @@ func drawDebugArrow(screen *ebiten.Image, x, y, angle, lenght, width float64, ar
 // always same, whatever the window's size is. Layout will be more meaningful
 // e.g., when the window is resizable.
 func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
+	return g.screenWidth, g.screenHeight
 }
 
 func main() {
