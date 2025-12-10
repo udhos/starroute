@@ -155,6 +155,10 @@ func (g *game) Update() error {
 // ebiten.Image objects. screen argument is the final destination of
 // rendering. The window shows the final state of screen every frame.
 func (g *game) Draw(screen *ebiten.Image) {
+
+	backgroundColor := color.RGBA{R: 128, G: 128, B: 128, A: 255}
+	screen.Fill(backgroundColor)
+
 	g.scenes[g.sceneCurrent].draw(screen)
 }
 

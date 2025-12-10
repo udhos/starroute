@@ -34,9 +34,11 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 
 	log.Printf("Tile size: %d", tileSize)
 
+	log.Printf("Tiles image size: %dx%d", ts.tilesImage.Bounds().Dx(), ts.tilesImage.Bounds().Dy())
+
 	log.Printf("Tile layer X count: %d", tileLayerXCount)
 
-	log.Printf("Tiles image size: %dx%d", ts.tilesImage.Bounds().Dx(), ts.tilesImage.Bounds().Dy())
+	log.Printf("Tile layer size: %dx%d", tileSize*tileLayerXCount, tileSize*len(layers[0])/tileLayerXCount)
 
 	tilesImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
 	tilesImageYCount := ts.tilesImage.Bounds().Dy() / tileSize

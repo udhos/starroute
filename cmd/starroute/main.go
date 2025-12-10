@@ -14,7 +14,14 @@ func main() {
 	flag.BoolVar(&pause, "pause", false, "pause game update")
 	flag.Parse()
 
-	ebiten.SetWindowSize(640, 480)
+	const (
+		windowWidth  = 640
+		windowHeight = 480
+	)
+
+	log.Printf("Window size: %dx%d", windowWidth, windowHeight)
+
+	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("Star Route")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
