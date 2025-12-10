@@ -81,7 +81,8 @@ func (ts *tiles) draw(screen *ebiten.Image) {
 		}
 	}
 
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS:%0.1f FPS:%0.1f",
+		ebiten.ActualTPS(), ebiten.ActualFPS()))
 }
 
 var layers = [][]int{

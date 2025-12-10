@@ -39,6 +39,7 @@ type game struct {
 	screenHeight int
 
 	//keys []ebiten.Key
+	//screenTrackWindow bool
 }
 
 /*
@@ -157,6 +158,12 @@ func (g *game) Update() error {
 	if inpututil.IsKeyJustReleased(ebiten.KeyBackspace) {
 		g.switchScene()
 	}
+	/*
+		if inpututil.IsKeyJustReleased(ebiten.KeyShiftRight) {
+			g.screenTrackWindow = !g.screenTrackWindow
+			log.Printf("Screen track window: %t", g.screenTrackWindow)
+		}
+	*/
 
 	if g.pause {
 		return nil
@@ -219,5 +226,11 @@ func drawDebugArrow(screen *ebiten.Image, x, y, angle, lenght, width float64, ar
 // always same, whatever the window's size is. Layout will be more meaningful
 // e.g., when the window is resizable.
 func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	/*
+		if g.screenTrackWindow {
+			g.screenWidth = outsideWidth
+			g.screenHeight = outsideHeight
+		}
+	*/
 	return g.screenWidth, g.screenHeight
 }
