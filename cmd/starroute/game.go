@@ -85,8 +85,8 @@ func newGame() *game {
 		//tiles: newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerXCount),
 
 		// See comment in game.Layout method.
-		screenWidth:  320,
-		screenHeight: 320,
+		screenWidth:  defaultScreenWidth,
+		screenHeight: defaultScreenHeight,
 
 		scenes:       []scene{scene1, scene2},
 		sceneCurrent: 0,
@@ -110,21 +110,39 @@ func newGame() *game {
 // default (i.e. an Ebitengine game works in 60 ticks-per-second).
 func (g *game) Update() error {
 
-	/*
-		keys := inpututil.AppendPressedKeys(nil)
-		if len(keys) > 0 {
-			p := keys[len(keys)-1]
-			switch p {
-			case ebiten.KeyP:
-				g.pause = !g.pause
-				log.Printf("Pause: %t", g.pause)
-			case ebiten.KeyBackspace:
-				g.sceneCurrent = (g.sceneCurrent + 1) % len(g.scenes)
-				log.Printf("Switching to scene %d of %d",
-					g.sceneCurrent+1, len(g.scenes))
+	//
+	// handle burst of keys
+	//
+	keys := inpututil.AppendPressedKeys(nil)
+	if len(keys) > 0 {
+		p := keys[len(keys)-1]
+		zero := p == ebiten.Key0
+		plus := p == ebiten.KeyEqual
+		minus := p == ebiten.KeyMinus
+		if zero {
+			g.screenWidth = defaultScreenWidth
+			g.screenHeight = defaultScreenHeight
+		}
+		if plus {
+			if g.screenWidth < 10000 {
+				g.screenWidth += g.screenWidth / 10
+			}
+			if g.screenHeight < 10000 {
+				g.screenHeight += g.screenHeight / 10
 			}
 		}
-	*/
+		if minus {
+			if g.screenWidth > 10 {
+				g.screenWidth -= g.screenWidth / 10
+			}
+			if g.screenHeight > 10 {
+				g.screenHeight -= g.screenHeight / 10
+			}
+		}
+		if zero || plus || minus {
+			log.Printf("Game screen size: %dx%d", g.screenWidth, g.screenHeight)
+		}
+	}
 
 	if inpututil.IsKeyJustReleased(ebiten.KeyP) {
 		g.pause = !g.pause

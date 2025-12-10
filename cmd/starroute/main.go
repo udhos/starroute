@@ -8,16 +8,23 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+const (
+	// screen and window dimensions should be proportional,
+	// then the screen would fit nicely within the window
+	// without a padding border.
+
+	defaultScreenWidth  = 400
+	defaultScreenHeight = 300
+
+	windowWidth  = 2 * defaultScreenWidth
+	windowHeight = 2 * defaultScreenHeight
+)
+
 func main() {
 
 	var pause bool
 	flag.BoolVar(&pause, "pause", false, "pause game update")
 	flag.Parse()
-
-	const (
-		windowWidth  = 640
-		windowHeight = 480
-	)
 
 	log.Printf("Window size: %dx%d", windowWidth, windowHeight)
 
