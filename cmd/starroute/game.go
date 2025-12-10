@@ -7,9 +7,11 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"github.com/udhos/starroute/music"
 )
 
 const (
@@ -71,13 +73,15 @@ func newGame() *game {
 		tileLayerXCount      = 15
 	)
 
+	audioContext := audio.NewContext(music.SampleRate)
+
 	ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerXCount)
 
-	scene1 := scene{tiles: ts}
+	scene1 := newScene(ts, sceneTrack1, audioContext)
 	scene1.addSprite(50, 50, 0, ebitenImage)
 	scene1.addSprite(100, 100, oneEighth, ebitenImage)
 
-	scene2 := scene{tiles: ts}
+	scene2 := newScene(ts, sceneTrack2, audioContext)
 	scene2.addSprite(150, 150, 0, ebitenImage)
 	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
 
@@ -91,6 +95,8 @@ func newGame() *game {
 		scenes:       []scene{scene1, scene2},
 		sceneCurrent: 0,
 	}
+
+	g.scenes[g.sceneCurrent].musicStart()
 
 	// See comment in game.Layout method.
 	log.Printf("Game screen size: %dx%d", g.screenWidth, g.screenHeight)
@@ -149,9 +155,7 @@ func (g *game) Update() error {
 		log.Printf("Pause: %t", g.pause)
 	}
 	if inpututil.IsKeyJustReleased(ebiten.KeyBackspace) {
-		g.sceneCurrent = (g.sceneCurrent + 1) % len(g.scenes)
-		log.Printf("Switching to scene %d of %d",
-			g.sceneCurrent+1, len(g.scenes))
+		g.switchScene()
 	}
 
 	if g.pause {
@@ -161,6 +165,16 @@ func (g *game) Update() error {
 	g.scenes[g.sceneCurrent].update()
 
 	return nil
+}
+
+func (g *game) switchScene() {
+	g.scenes[g.sceneCurrent].musicStop()
+
+	g.sceneCurrent = (g.sceneCurrent + 1) % len(g.scenes)
+	log.Printf("Switching to scene %d of %d",
+		g.sceneCurrent+1, len(g.scenes))
+
+	g.scenes[g.sceneCurrent].musicStart()
 }
 
 // Draw is called every frame. Frame is a time unit for rendering and this

@@ -1,14 +1,66 @@
 package main
 
 import (
+	"bytes"
 	"image/color"
+	"log"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	raudio "github.com/hajimehoshi/ebiten/v2/examples/resources/audio"
+	"github.com/udhos/starroute/music"
+)
+
+const (
+	sceneTrack1 = 0
+	sceneTrack2 = 1
 )
 
 type scene struct {
-	sprites []*sprite
-	tiles   *tiles
+	sprites      []*sprite
+	tiles        *tiles
+	musicPlayer  *music.Player
+	musicTrack   int
+	audioContext *audio.Context
+}
+
+func newScene(ts *tiles, musicTrack int, audioContext *audio.Context) scene {
+	sc := scene{tiles: ts, musicTrack: musicTrack, audioContext: audioContext}
+	return sc
+}
+
+func (sc *scene) musicStart() {
+	sc.musicStop()
+	//m, err := music.NewPlayer(audioContext, music.TypeOgg, bytes.NewReader(raudio.Ragtime_ogg))
+	//m, err := music.NewPlayer(audioContext, music.TypeMP3, bytes.NewReader(raudio.Ragtime_mp3))
+
+	var m *music.Player
+	var err error
+
+	if sc.musicTrack == sceneTrack1 {
+		const input = "assets/champions-victory-winner-background-music-388566.mp3"
+		data, errRead := os.ReadFile(input)
+		if errRead != nil {
+			log.Fatalf("scene.musicStart: error: open file: %s: %v", input, errRead)
+		}
+		m, err = music.NewPlayer(sc.audioContext, music.TypeMP3, bytes.NewReader(data))
+	} else {
+		m, err = music.NewPlayer(sc.audioContext, music.TypeMP3, bytes.NewReader(raudio.Ragtime_mp3))
+	}
+
+	if err != nil {
+		log.Fatalf("scene.musicStart error: %v", err)
+	}
+	sc.musicPlayer = m
+}
+
+func (sc *scene) musicStop() {
+	if sc.musicPlayer == nil {
+		return
+	}
+	sc.musicPlayer.Close()
+	sc.musicPlayer = nil
 }
 
 func (sc *scene) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image) {
@@ -28,6 +80,12 @@ func (sc *scene) update() {
 	// Update all sprites.
 	for _, spr := range sc.sprites {
 		spr.update()
+	}
+
+	if sc.musicPlayer != nil {
+		if err := sc.musicPlayer.Update(); err != nil {
+			log.Printf("scene.update: music player error: %v", err)
+		}
 	}
 }
 
