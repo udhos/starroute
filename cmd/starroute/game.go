@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -34,9 +35,11 @@ type game struct {
 	// See comment in game.Layout method.
 	screenWidth  int
 	screenHeight int
+
+	fullscreen bool
 }
 
-func newGame() *game {
+func newGame(fullscreen bool) *game {
 
 	//
 	// Load an image from the embedded image data.
@@ -81,6 +84,8 @@ func newGame() *game {
 
 		scenes:       []scene{scene1, scene2, scene3},
 		sceneCurrent: 0,
+
+		fullscreen: fullscreen,
 	}
 
 	g.scenes[g.sceneCurrent].musicStart()
@@ -118,6 +123,9 @@ func (g *game) Update() error {
 		case ebiten.KeyRight:
 			g.scenes[g.sceneCurrent].cam.x += camPanStep
 			continue
+		case ebiten.KeyEscape:
+			log.Printf("ESC pressed, exiting")
+			os.Exit(0)
 		}
 
 		zero := p == ebiten.Key0
@@ -162,6 +170,10 @@ func (g *game) Update() error {
 	/*
 		if inpututil.IsKeyJustReleased(ebiten.KeyShiftRight) {
 			g.screenTrackWindow = !g.screenTrackWindow
+
+			g.screenWidth = defaultScreenWidth
+			g.screenHeight = defaultScreenHeight
+
 			log.Printf("Screen track window: %t", g.screenTrackWindow)
 		}
 	*/
@@ -246,12 +258,22 @@ func drawDebugRect(screen *ebiten.Image, x1, y1, x2, y2 float64, borderColor col
 // and returns the fixed values. This means that the game screen size is
 // always same, whatever the window's size is. Layout will be more meaningful
 // e.g., when the window is resizable.
+// Layout takes the outside size (e.g., the window size) and returns the (logical) screen size.
+// If you don't have to adjust the screen size with the outside size, just return a fixed size.
 func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+
 	/*
 		if g.screenTrackWindow {
 			g.screenWidth = outsideWidth
 			g.screenHeight = outsideHeight
 		}
 	*/
+
+	if g.fullscreen {
+		g.screenWidth = outsideWidth
+		g.screenHeight = outsideHeight
+		return outsideWidth, outsideHeight
+	}
+
 	return g.screenWidth, g.screenHeight
 }
