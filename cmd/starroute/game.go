@@ -150,7 +150,7 @@ func (g *game) Update() error {
 
 	if inpututil.IsKeyJustReleased(ebiten.KeyO) {
 		g.debug = !g.debug
-		log.Printf("Pause: %t", g.debug)
+		log.Printf("Debug: %t", g.debug)
 	}
 	if inpututil.IsKeyJustReleased(ebiten.KeyP) {
 		g.pause = !g.pause
