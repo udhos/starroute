@@ -75,7 +75,7 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) {
 	}
 }
 
-var layers = [][]int{
+var sampleLayers = [][]int{
 	{
 		243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
 		243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,

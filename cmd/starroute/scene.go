@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	sceneTrack1 = 0
-	sceneTrack2 = 1
+	sceneTrack1 = iota
+	sceneTrack2
+	sceneTrack3
 )
 
 type camera struct {
@@ -50,15 +51,18 @@ func (sc *scene) musicStart() {
 	var m *music.Player
 	var err error
 
-	if sc.musicTrack == sceneTrack1 {
+	switch sc.musicTrack {
+	case sceneTrack1:
 		const input = "assets/champions-victory-winner-background-music-388566.mp3"
 		data, errRead := os.ReadFile(input)
 		if errRead != nil {
 			log.Fatalf("scene.musicStart: error: open file: %s: %v", input, errRead)
 		}
 		m, err = music.NewPlayer(sc.audioContext, music.TypeMP3, bytes.NewReader(data))
-	} else {
+	case sceneTrack2:
 		m, err = music.NewPlayer(sc.audioContext, music.TypeMP3, bytes.NewReader(raudio.Ragtime_mp3))
+	case sceneTrack3:
+		// no music
 	}
 
 	if err != nil {

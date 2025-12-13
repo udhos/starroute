@@ -54,7 +54,7 @@ func newGame() *game {
 
 	audioContext := audio.NewContext(music.SampleRate)
 
-	ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerXCount)
+	ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, sampleLayers, tileLayerXCount)
 
 	scene1 := newScene(ts, sceneTrack1, audioContext)
 	scene1.addSprite(50, 50, 0, ebitenImage)
@@ -64,6 +64,13 @@ func newGame() *game {
 	scene2.addSprite(150, 150, 0, ebitenImage)
 	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
 
+	const tileEdgeCount = 30 // 30x30
+	layers := [][]int{generateLayer(tileEdgeCount)}
+	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
+
+	scene3 := newScene(ts3, sceneTrack3, audioContext)
+	scene3.addSprite(100, 50, 0, ebitenImage)
+
 	g := &game{
 		debug: true,
 
@@ -71,7 +78,7 @@ func newGame() *game {
 		screenWidth:  defaultScreenWidth,
 		screenHeight: defaultScreenHeight,
 
-		scenes:       []scene{scene1, scene2},
+		scenes:       []scene{scene1, scene2, scene3},
 		sceneCurrent: 0,
 	}
 
