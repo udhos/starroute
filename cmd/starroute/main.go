@@ -61,13 +61,11 @@ func main() {
 	log.Printf("Window size: %dx%d", windowWidth, windowHeight)
 
 	isFull := resize == "full"
-	ebiten.SetFullscreen(isFull)
-	ebiten.SetWindowResizingMode(resizeMode)
+	ebiten.SetWindowTitle("Star Route")
 	ebiten.SetWindowDecorated(!isFull)
-	if !isFull {
-		ebiten.SetWindowTitle("Star Route")
-		ebiten.SetWindowSize(windowWidth, windowHeight)
-	}
+	ebiten.SetFullscreen(isFull)
+	ebiten.SetWindowSize(windowWidth, windowHeight)
+	ebiten.SetWindowResizingMode(resizeMode)
 
 	g := newGame(isFull, screenWidth, screenHeight)
 
