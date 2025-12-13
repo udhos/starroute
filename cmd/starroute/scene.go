@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"image/color"
 	"log"
+	"math"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	raudio "github.com/hajimehoshi/ebiten/v2/examples/resources/audio"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/udhos/starroute/music"
 )
 
@@ -17,16 +19,26 @@ const (
 	sceneTrack2 = 1
 )
 
+type camera struct {
+	x, y int
+}
+
 type scene struct {
 	sprites      []*sprite
 	tiles        *tiles
 	musicPlayer  *music.Player
 	musicTrack   int
 	audioContext *audio.Context
+	cam          *camera
 }
 
 func newScene(ts *tiles, musicTrack int, audioContext *audio.Context) scene {
-	sc := scene{tiles: ts, musicTrack: musicTrack, audioContext: audioContext}
+	sc := scene{
+		tiles:        ts,
+		musicTrack:   musicTrack,
+		audioContext: audioContext,
+		cam:          &camera{},
+	}
 	return sc
 }
 
@@ -89,8 +101,8 @@ func (sc *scene) update() {
 	}
 }
 
-func (sc *scene) draw(screen *ebiten.Image) {
-	sc.tiles.draw(screen)
+func (sc *scene) draw(screen *ebiten.Image, debug bool) {
+	sc.tiles.draw(screen, sc.cam)
 
 	// Draw each sprite.
 	// DrawImage can be called many many times, but in the implementation,
@@ -98,6 +110,9 @@ func (sc *scene) draw(screen *ebiten.Image) {
 	// some conditions e.g. all the rendering sources and targets are same.
 	// For more detail, see:
 	// https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
+
+	camX := float64(sc.cam.x)
+	camY := float64(sc.cam.y)
 
 	var op ebiten.DrawImageOptions
 
@@ -127,25 +142,47 @@ func (sc *scene) draw(screen *ebiten.Image) {
 		op.GeoM.Translate(centerX, centerY)
 
 		// apply the actual object's position
-		op.GeoM.Translate(float64(s.x), float64(s.y))
+		op.GeoM.Translate(s.x-camX, s.y-camY)
 
 		screen.DrawImage(s.image, &op)
 
-		//
-		// Red show how much the sprite was rotated back (counter clockwise) to
-		// make its front point to the right (zero angle).
-		//
-		colorRed := color.RGBA{0xff, 0, 0, 0xff}
-		drawDebugArrow(screen, float64(s.x+centerX), float64(s.y+centerY),
-			angleRad-angleNativeRad, 20, 3, colorRed)
+		if debug {
+			x := s.x + centerX - camX
+			y := s.y + centerY - camY
+			//
+			// Red show how much the sprite was rotated back (counter clockwise) to
+			// make its front point to the right (zero angle).
+			//
+			colorRed := color.RGBA{0xff, 0, 0, 0xff}
+			drawDebugArrow(screen, x, y,
+				angleRad-angleNativeRad, 20, 3, colorRed)
 
-		//
-		// Yellow show the sprint front direction and should point to
-		// right (zero angle).
-		//
-		colorYellow := color.RGBA{0xff, 0xff, 0, 0xff}
-		drawDebugArrow(screen, float64(s.x+centerX), float64(s.y+centerY),
-			angleRad, 30, 1, colorYellow)
+			//
+			// Yellow show the sprint front direction and should point to
+			// right (zero angle).
+			//
+			colorYellow := color.RGBA{0xff, 0xff, 0, 0xff}
+			drawDebugArrow(screen, x, y,
+				angleRad, 30, 1, colorYellow)
+		}
 	}
+}
 
+func drawDebugArrow(screen *ebiten.Image, x, y, angle, lenght, width float64, arrowColor color.RGBA) {
+	arrowX := x + lenght*math.Cos(angle)
+	arrowY := y + lenght*math.Sin(angle)
+
+	var path vector.Path
+	path.MoveTo(float32(x), float32(y))
+	path.LineTo(float32(arrowX), float32(arrowY))
+
+	strokeOp := &vector.StrokeOptions{}
+	strokeOp.Width = float32(width)
+
+	drawOp := &vector.DrawPathOptions{}
+
+	drawOp.ColorScale.ScaleWithColor(arrowColor)
+
+	drawOp.AntiAlias = false
+	vector.StrokePath(screen, &path, strokeOp, drawOp)
 }

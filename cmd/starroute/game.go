@@ -2,15 +2,16 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image/color"
 	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/udhos/starroute/music"
 )
 
@@ -24,38 +25,15 @@ const (
 // game implements ebiten.Game interface.
 type game struct {
 	pause bool
+	debug bool
 
 	scenes       []scene
 	sceneCurrent int
 
-	/*
-		op      ebiten.DrawImageOptions
-		sprites []*sprite
-		tiles   *tiles
-	*/
-
 	// See comment in game.Layout method.
 	screenWidth  int
 	screenHeight int
-
-	//keys []ebiten.Key
-	//screenTrackWindow bool
 }
-
-/*
-func (g *game) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image) {
-	w, h := spriteImage.Bounds().Dx(), spriteImage.Bounds().Dy()
-	spr := sprite{
-		x:           x,
-		y:           y,
-		width:       w,
-		height:      h,
-		angleNative: angleNative,
-		image:       spriteImage,
-	}
-	g.sprites = append(g.sprites, &spr)
-}
-*/
 
 func newGame() *game {
 
@@ -87,7 +65,7 @@ func newGame() *game {
 	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
 
 	g := &game{
-		//tiles: newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileLayerXCount),
+		debug: true,
 
 		// See comment in game.Layout method.
 		screenWidth:  defaultScreenWidth,
@@ -102,15 +80,10 @@ func newGame() *game {
 	// See comment in game.Layout method.
 	log.Printf("Game screen size: %dx%d", g.screenWidth, g.screenHeight)
 
-	//
-	// Add sprites.
-	//
-
-	//g.addSprite(50, 50, 0, ebitenImage)
-	//g.addSprite(100, 100, oneEighth, ebitenImage)
-
 	return g
 }
+
+const camPanStep = 5
 
 // Update is called every tick. Tick is a time unit for logical updating.
 // The default value is 1/60 [s], then Update is called 60 times per second by
@@ -121,8 +94,24 @@ func (g *game) Update() error {
 	// handle burst of keys
 	//
 	keys := inpututil.AppendPressedKeys(nil)
-	if len(keys) > 0 {
-		p := keys[len(keys)-1]
+	for _, p := range keys {
+		//p := keys[len(keys)-1]
+
+		switch p {
+		case ebiten.KeyUp:
+			g.scenes[g.sceneCurrent].cam.y = max(g.scenes[g.sceneCurrent].cam.y-camPanStep, 0)
+			continue
+		case ebiten.KeyDown:
+			g.scenes[g.sceneCurrent].cam.y += camPanStep
+			continue
+		case ebiten.KeyLeft:
+			g.scenes[g.sceneCurrent].cam.x = max(g.scenes[g.sceneCurrent].cam.x-camPanStep, 0)
+			continue
+		case ebiten.KeyRight:
+			g.scenes[g.sceneCurrent].cam.x += camPanStep
+			continue
+		}
+
 		zero := p == ebiten.Key0
 		plus := p == ebiten.KeyEqual
 		minus := p == ebiten.KeyMinus
@@ -151,6 +140,10 @@ func (g *game) Update() error {
 		}
 	}
 
+	if inpututil.IsKeyJustReleased(ebiten.KeyO) {
+		g.debug = !g.debug
+		log.Printf("Pause: %t", g.debug)
+	}
 	if inpututil.IsKeyJustReleased(ebiten.KeyP) {
 		g.pause = !g.pause
 		log.Printf("Pause: %t", g.pause)
@@ -198,26 +191,13 @@ func (g *game) Draw(screen *ebiten.Image) {
 	backgroundColor := color.RGBA{R: 128, G: 128, B: 128, A: 255}
 	screen.Fill(backgroundColor)
 
-	g.scenes[g.sceneCurrent].draw(screen)
-}
+	g.scenes[g.sceneCurrent].draw(screen, g.debug)
 
-func drawDebugArrow(screen *ebiten.Image, x, y, angle, lenght, width float64, arrowColor color.RGBA) {
-	arrowX := x + lenght*math.Cos(angle)
-	arrowY := y + lenght*math.Sin(angle)
-
-	var path vector.Path
-	path.MoveTo(float32(x), float32(y))
-	path.LineTo(float32(arrowX), float32(arrowY))
-
-	strokeOp := &vector.StrokeOptions{}
-	strokeOp.Width = float32(width)
-
-	drawOp := &vector.DrawPathOptions{}
-
-	drawOp.ColorScale.ScaleWithColor(arrowColor)
-
-	drawOp.AntiAlias = false
-	vector.StrokePath(screen, &path, strokeOp, drawOp)
+	if g.debug {
+		cam := g.scenes[g.sceneCurrent].cam
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS:%0.1f FPS:%0.1f cam:%dx%d",
+			ebiten.ActualTPS(), ebiten.ActualFPS(), cam.x, cam.y))
+	}
 }
 
 // Layout accepts an outside size, which is a window size on desktop, and

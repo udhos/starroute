@@ -1,13 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"io"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type tiles struct {
@@ -48,7 +46,7 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 	return ts
 }
 
-func (ts *tiles) draw(screen *ebiten.Image) {
+func (ts *tiles) draw(screen *ebiten.Image, cam *camera) {
 	tileSize := ts.tileSize
 
 	// Draw each tile with each DrawImage call.
@@ -67,12 +65,7 @@ func (ts *tiles) draw(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			screenX := (i % xCount) * tileSize
 			screenY := (i / xCount) * tileSize
-			op.GeoM.Translate(float64(screenX), float64(screenY))
-
-			// t is the tile index in the tiles image
-			// x=0..24
-			// y=0..13
-			// find x and y for t=243
+			op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
 
 			sx := (t % tileImageXCount) * tileSize
 			sy := (t / tileImageXCount) * tileSize
@@ -80,9 +73,6 @@ func (ts *tiles) draw(screen *ebiten.Image) {
 			screen.DrawImage(subImage, op)
 		}
 	}
-
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS:%0.1f FPS:%0.1f",
-		ebiten.ActualTPS(), ebiten.ActualFPS()))
 }
 
 var layers = [][]int{
