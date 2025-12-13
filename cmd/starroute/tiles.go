@@ -15,6 +15,10 @@ type tiles struct {
 	tileLayerXCount int
 }
 
+func (ts tiles) dimensions() (int, int) {
+	return ts.tileSize * ts.tileLayerXCount, ts.tileSize * len(ts.layers[0]) / ts.tileLayerXCount
+}
+
 func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *tiles {
 
 	// Decode an image from the image file's byte slice.
@@ -36,7 +40,9 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 
 	log.Printf("Tile layer X count: %d", tileLayerXCount)
 
-	log.Printf("Tile layer size: %dx%d", tileSize*tileLayerXCount, tileSize*len(layers[0])/tileLayerXCount)
+	dimX, dimY := ts.dimensions()
+
+	log.Printf("Tile layer size: %dx%d", dimX, dimY)
 
 	tilesImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
 	tilesImageYCount := ts.tilesImage.Bounds().Dy() / tileSize

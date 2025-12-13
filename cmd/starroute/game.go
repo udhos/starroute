@@ -12,6 +12,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/udhos/starroute/music"
 )
 
@@ -198,13 +199,46 @@ func (g *game) Draw(screen *ebiten.Image) {
 	backgroundColor := color.RGBA{R: 128, G: 128, B: 128, A: 255}
 	screen.Fill(backgroundColor)
 
-	g.scenes[g.sceneCurrent].draw(screen, g.debug)
+	sc := g.scenes[g.sceneCurrent]
+
+	sc.draw(screen, g.debug)
 
 	if g.debug {
-		cam := g.scenes[g.sceneCurrent].cam
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS:%0.1f FPS:%0.1f cam:%dx%d",
-			ebiten.ActualTPS(), ebiten.ActualFPS(), cam.x, cam.y))
+		tileDimX, tileDimY := sc.tiles.dimensions()
+		cam := sc.cam
+		camLastX := cam.x + g.screenWidth - 1
+		camLastY := cam.y + g.screenHeight - 1
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d",
+			ebiten.ActualTPS(), ebiten.ActualFPS(),
+			tileDimX, tileDimY,
+			cam.x, cam.y,
+			camLastX, camLastY))
+
+		colorBlue := color.RGBA{0, 0, 0xff, 0xff}
+		drawDebugRect(screen, 1, 1, float64(g.screenWidth), float64(g.screenHeight), colorBlue)
 	}
+}
+
+func drawDebugRect(screen *ebiten.Image, x1, y1, x2, y2 float64, borderColor color.RGBA) {
+
+	const width = 1
+
+	var path vector.Path
+	path.MoveTo(float32(x1), float32(y1))
+	path.LineTo(float32(x1), float32(y2))
+	path.LineTo(float32(x2), float32(y2))
+	path.LineTo(float32(x2), float32(y1))
+	path.LineTo(float32(x1), float32(y1))
+
+	strokeOp := &vector.StrokeOptions{}
+	strokeOp.Width = float32(width)
+
+	drawOp := &vector.DrawPathOptions{}
+
+	drawOp.ColorScale.ScaleWithColor(borderColor)
+
+	drawOp.AntiAlias = false
+	vector.StrokePath(screen, &path, strokeOp, drawOp)
 }
 
 // Layout accepts an outside size, which is a window size on desktop, and
