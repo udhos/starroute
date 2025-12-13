@@ -32,6 +32,9 @@ type game struct {
 	scenes       []scene
 	sceneCurrent int
 
+	defaultScreenWidth  int
+	defaultScreenHeight int
+
 	// See comment in game.Layout method.
 	screenWidth  int
 	screenHeight int
@@ -39,7 +42,7 @@ type game struct {
 	fullscreen bool
 }
 
-func newGame(fullscreen bool) *game {
+func newGame(fullscreen bool, defaultScreenWidth, defaultScreenHeight int) *game {
 
 	//
 	// Load an image from the embedded image data.
@@ -77,6 +80,9 @@ func newGame(fullscreen bool) *game {
 
 	g := &game{
 		debug: true,
+
+		defaultScreenWidth:  defaultScreenWidth,
+		defaultScreenHeight: defaultScreenHeight,
 
 		// See comment in game.Layout method.
 		screenWidth:  defaultScreenWidth,
@@ -132,8 +138,8 @@ func (g *game) Update() error {
 		plus := p == ebiten.KeyEqual
 		minus := p == ebiten.KeyMinus
 		if zero {
-			g.screenWidth = defaultScreenWidth
-			g.screenHeight = defaultScreenHeight
+			g.screenWidth = g.defaultScreenWidth
+			g.screenHeight = g.defaultScreenHeight
 		}
 		if plus {
 			if g.screenWidth < 10000 {
@@ -253,27 +259,23 @@ func drawDebugRect(screen *ebiten.Image, x1, y1, x2, y2 float64, borderColor col
 	vector.StrokePath(screen, &path, strokeOp, drawOp)
 }
 
-// Layout accepts an outside size, which is a window size on desktop, and
-// returns the game's logical screen size. This code ignores the arguments
-// and returns the fixed values. This means that the game screen size is
-// always same, whatever the window's size is. Layout will be more meaningful
-// e.g., when the window is resizable.
-// Layout takes the outside size (e.g., the window size) and returns the (logical) screen size.
-// If you don't have to adjust the screen size with the outside size, just return a fixed size.
+// Layout takes the outside size (e.g., the window size) and returns the
+// (logical) screen size.
+// If you don't have to adjust the screen size with the outside size, just
+// return a fixed size.
 func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 
-	/*
-		if g.screenTrackWindow {
-			g.screenWidth = outsideWidth
-			g.screenHeight = outsideHeight
-		}
-	*/
-
 	if g.fullscreen {
+		//
+		// Game screen size tracks the window size.
+		//
 		g.screenWidth = outsideWidth
 		g.screenHeight = outsideHeight
 		return outsideWidth, outsideHeight
 	}
 
+	// This code ignores the arguments and returns the fixed values.
+	// This means that the game screen size is always same,
+	// whatever the window's size is.
 	return g.screenWidth, g.screenHeight
 }
