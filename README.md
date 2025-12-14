@@ -12,6 +12,7 @@ Highest value minerals in the galaxy
 | Tritium  | 30K |
 | Plutonium-238 | 12K |
 | Diamond | 10K |
+| Uranium-233 | 8K |
 | Rhodium | 500 |
 | Iridium | 150 |
 | Gold | 50 |
