@@ -39,7 +39,11 @@ type game struct {
 	screenWidth  int
 	screenHeight int
 
-	fullscreen bool
+	// used only to debug window size
+	windowWidth  int
+	windowHeight int
+
+	mouseX, mouseY int
 }
 
 func newGame(fullscreen bool, defaultScreenWidth, defaultScreenHeight int) *game {
@@ -71,7 +75,7 @@ func newGame(fullscreen bool, defaultScreenWidth, defaultScreenHeight int) *game
 	scene2.addSprite(150, 150, 0, ebitenImage)
 	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
 
-	const tileEdgeCount = 30 // 30x30
+	const tileEdgeCount = 200 // 200x200=40000
 	layers := [][]int{generateLayer(tileEdgeCount)}
 	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 
@@ -90,8 +94,6 @@ func newGame(fullscreen bool, defaultScreenWidth, defaultScreenHeight int) *game
 
 		scenes:       []scene{scene1, scene2, scene3},
 		sceneCurrent: 0,
-
-		fullscreen: fullscreen,
 	}
 
 	g.scenes[g.sceneCurrent].musicStart()
@@ -184,6 +186,8 @@ func (g *game) Update() error {
 		}
 	*/
 
+	g.mouseX, g.mouseY = ebiten.CursorPosition()
+
 	if g.pause {
 		return nil
 	}
@@ -226,11 +230,17 @@ func (g *game) Draw(screen *ebiten.Image) {
 		cam := sc.cam
 		camLastX := cam.x + g.screenWidth - 1
 		camLastY := cam.y + g.screenHeight - 1
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d",
-			ebiten.ActualTPS(), ebiten.ActualFPS(),
-			tileDimX, tileDimY,
-			cam.x, cam.y,
-			camLastX, camLastY))
+		ebitenutil.DebugPrint(screen,
+			fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d mouse:%dx%d screen.Bounds:%dx%d win:%dx%d",
+				ebiten.ActualTPS(), ebiten.ActualFPS(),
+				tileDimX, tileDimY,
+				cam.x, cam.y,
+				camLastX, camLastY,
+				g.mouseX, g.mouseY,
+				screen.Bounds().Dx(),
+				screen.Bounds().Dy(),
+				g.windowWidth,
+				g.windowHeight))
 
 		colorBlue := color.RGBA{0, 0, 0xff, 0xff}
 		drawDebugRect(screen, 1, 1, float64(g.screenWidth), float64(g.screenHeight), colorBlue)
@@ -264,15 +274,9 @@ func drawDebugRect(screen *ebiten.Image, x1, y1, x2, y2 float64, borderColor col
 // If you don't have to adjust the screen size with the outside size, just
 // return a fixed size.
 func (g *game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-
-	if g.fullscreen {
-		//
-		// Game screen size tracks the window size.
-		//
-		g.screenWidth = outsideWidth
-		g.screenHeight = outsideHeight
-		return outsideWidth, outsideHeight
-	}
+	// used only to debug window size
+	g.windowWidth = outsideWidth
+	g.windowHeight = outsideHeight
 
 	// This code ignores the arguments and returns the fixed values.
 	// This means that the game screen size is always same,

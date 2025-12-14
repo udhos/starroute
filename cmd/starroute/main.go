@@ -18,7 +18,7 @@ func main() {
 	var window string
 	var both string
 	flag.BoolVar(&pause, "pause", false, "pause game update")
-	flag.StringVar(&resize, "resize", "on", "window resize mode: on|off|full")
+	flag.StringVar(&resize, "resize", "on", "window resize mode: on|off|fullscreen")
 	flag.StringVar(&screen, "screen", "800x600", "game logical screen size (should be <= window size)")
 	flag.StringVar(&window, "window", "800x600", "outsize window size (should be multiple of screen size)")
 	flag.StringVar(&both, "both", "", "screen and window size")
@@ -35,12 +35,12 @@ func main() {
 	}
 
 	var resizeMode ebiten.WindowResizingModeType
-	switch resize {
-	case "on":
+	switch {
+	case resize == "on":
 		resizeMode = ebiten.WindowResizingModeEnabled
-	case "off":
+	case resize == "off":
 		resizeMode = ebiten.WindowResizingModeDisabled
-	case "full":
+	case strings.HasPrefix("fullscreen", resize):
 		resizeMode = ebiten.WindowResizingModeOnlyFullscreenEnabled
 	default:
 		log.Fatalf("invalid window resize mode: %s", resize)
