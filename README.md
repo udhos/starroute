@@ -20,8 +20,11 @@ Highest value minerals in the galaxy
 | Rhodium | 500 |
 | Crystalline Osmium | 400 |
 | Iridium | 150 |
+| Osmium | 100 |
 | Gold | 50 |
 | Platinum | 40 |
+| Palladium | 30 |
+| Ruthenium | 20 |
 
 # Ebiten References
 
