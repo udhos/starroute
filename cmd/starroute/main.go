@@ -10,18 +10,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-const (
-// screen and window dimensions should be proportional,
-// then the screen would fit nicely within the window
-// without a padding border.
-
-//defaultScreenWidth  = 400
-//defaultScreenHeight = 300
-
-// windowWidth  = 2 * defaultScreenWidth
-// windowHeight = 2 * defaultScreenHeight
-)
-
 func main() {
 
 	var pause bool
@@ -31,8 +19,8 @@ func main() {
 	var both string
 	flag.BoolVar(&pause, "pause", false, "pause game update")
 	flag.StringVar(&resize, "resize", "on", "window resize mode: on|off|full")
-	flag.StringVar(&screen, "screen", "400x300", "screen size")
-	flag.StringVar(&window, "window", "800x600", "window size")
+	flag.StringVar(&screen, "screen", "800x600", "game logical screen size (should be <= window size)")
+	flag.StringVar(&window, "window", "800x600", "outsize window size (should be multiple of screen size)")
 	flag.StringVar(&both, "both", "", "screen and window size")
 	flag.Parse()
 
@@ -83,8 +71,14 @@ func parseDim(label, dim string) (int, int) {
 	}
 	x := s[0]
 	y := s[1]
-	valX, _ := strconv.Atoi(x)
-	valY, _ := strconv.Atoi(y)
+	valX, errX := strconv.Atoi(x)
+	if errX != nil {
+		log.Fatalf("bad dimension X: %s: %s: %v", label, dim, errX)
+	}
+	valY, errY := strconv.Atoi(y)
+	if errY != nil {
+		log.Fatalf("bad dimension Y: %s: %s: %v", label, dim, errY)
+	}
 	log.Printf("%s: %dx%d", label, valX, valY)
 	return valX, valY
 }
