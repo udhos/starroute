@@ -122,3 +122,36 @@ var sampleLayers = [][]int{
 		0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
 	},
 }
+
+// findTilemapWindow within a layer, composed of layerTiles tiles with
+// layerTileWidth tiles per row and width tilePixelWidth pixels, the subset
+// of tiles that must be drawn to completely fill the windown at
+// winX, winY of size winWidth x winHeight. Only tiles
+// that intersect the window with a least one pixel should be drawn.
+// Result is:
+// tileOffset is the offset of the first tile to be drawn.
+// tileXAmount is the amount of tiles to be drawn per row.
+// tileYAmount is the amount of rows of tiles to be drawn.
+// The caller must then draw tileXAmount tiles starting from tileOffset,
+// then skip tileXAmount tiles, and hence forth, up to tileYAmount rows.
+func findTilemapWindow(layerTiles, layerTileWidth, tilePixelWidth,
+	winX, winY, winWidth, winHeight int) (tileOffset, tileXAmount,
+	tileYAmount int) {
+	// Calculate the starting column and row
+	startCol := winX / tilePixelWidth
+	startRow := winY / tilePixelWidth
+
+	// Calculate the ending column and row (inclusive)
+	// We subtract 1 from the sum to get the last pixel, then divide
+	endCol := (winX + winWidth - 1) / tilePixelWidth
+	endRow := (winY + winHeight - 1) / tilePixelWidth
+
+	// Calculate the number of tiles in each dimension
+	tileXAmount = endCol - startCol + 1
+	tileYAmount = endRow - startRow + 1
+
+	// Calculate the linear offset of the first tile
+	tileOffset = startRow*layerTileWidth + startCol
+
+	return
+}
