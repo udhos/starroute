@@ -52,7 +52,7 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 	return ts
 }
 
-func (ts *tiles) draw(screen *ebiten.Image, cam *camera) {
+func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
 	tileSize := ts.tileSize
 
 	// Draw each tile with each DrawImage call.
@@ -66,19 +66,54 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) {
 	// number of tiles in the tiles image
 	tileImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
 
-	for _, l := range ts.layers {
-		for i, t := range l {
-			op := &ebiten.DrawImageOptions{}
-			screenX := (i % xCount) * tileSize
-			screenY := (i / xCount) * tileSize
-			op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
+	/*
+		for _, l := range ts.layers {
+			for i, t := range l {
+				op := &ebiten.DrawImageOptions{}
+				screenX := (i % xCount) * tileSize
+				screenY := (i / xCount) * tileSize
+				op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
 
-			sx := (t % tileImageXCount) * tileSize
-			sy := (t / tileImageXCount) * tileSize
-			subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-			screen.DrawImage(subImage, op)
+				sx := (t % tileImageXCount) * tileSize
+				sy := (t / tileImageXCount) * tileSize
+				subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+				screen.DrawImage(subImage, op)
+			}
+		}
+	*/
+
+	screenWidth := screen.Bounds().Dx()
+	screenHeight := screen.Bounds().Dy()
+
+	var sum int
+
+	for _, l := range ts.layers {
+		offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
+			cam.x, cam.y, screenWidth, screenHeight)
+
+		i := offset
+		for range yAmount {
+			for range xAmount {
+				t := l[i]
+
+				op := &ebiten.DrawImageOptions{}
+				screenX := (i % xCount) * tileSize
+				screenY := (i / xCount) * tileSize
+				op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
+
+				sx := (t % tileImageXCount) * tileSize
+				sy := (t / tileImageXCount) * tileSize
+				subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+				screen.DrawImage(subImage, op)
+
+				sum++
+				i++
+			}
+			i += xAmount - 1
 		}
 	}
+
+	return sum
 }
 
 var sampleLayers = [][]int{

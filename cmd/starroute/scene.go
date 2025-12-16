@@ -105,8 +105,8 @@ func (sc *scene) update() {
 	}
 }
 
-func (sc *scene) draw(screen *ebiten.Image, debug bool) {
-	sc.tiles.draw(screen, sc.cam)
+func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
+	countTiles := sc.tiles.draw(screen, sc.cam)
 
 	// Draw each sprite.
 	// DrawImage can be called many many times, but in the implementation,
@@ -170,6 +170,8 @@ func (sc *scene) draw(screen *ebiten.Image, debug bool) {
 				angleRad, 30, 1, colorYellow)
 		}
 	}
+
+	return countTiles
 }
 
 func drawDebugArrow(screen *ebiten.Image, x, y, angle, lenght, width float64, arrowColor color.RGBA) {

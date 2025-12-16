@@ -113,6 +113,19 @@ var tyleTestTable = []tyleTest{
 		expectTileXAmount: 3,
 		expectTileYAmount: 3,
 	},
+	{
+		name:              "window picks 3 last rows from last column of 4x4 map",
+		layerTiles:        16,
+		layerTileWidth:    4,
+		tilePixelWidth:    8,
+		winX:              25,
+		winY:              9,
+		winWidth:          100,
+		winHeight:         100,
+		expectTileOffset:  7,
+		expectTileXAmount: 1,
+		expectTileYAmount: 3,
+	},
 }
 
 // go test -count 1 -run '^TestFindTilemapWindow$' ./...

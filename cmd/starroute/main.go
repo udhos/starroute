@@ -55,7 +55,7 @@ func main() {
 	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowResizingMode(resizeMode)
 
-	g := newGame(isFull, screenWidth, screenHeight)
+	g := newGame(screenWidth, screenHeight)
 
 	g.pause = pause
 

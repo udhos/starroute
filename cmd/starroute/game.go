@@ -46,7 +46,7 @@ type game struct {
 	mouseX, mouseY int
 }
 
-func newGame(fullscreen bool, defaultScreenWidth, defaultScreenHeight int) *game {
+func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 
 	//
 	// Load an image from the embedded image data.
@@ -223,7 +223,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 
 	sc := g.scenes[g.sceneCurrent]
 
-	sc.draw(screen, g.debug)
+	drawnTiles := sc.draw(screen, g.debug)
 
 	if g.debug {
 		tileDimX, tileDimY := sc.tiles.dimensions()
@@ -231,7 +231,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 		camLastX := cam.x + g.screenWidth - 1
 		camLastY := cam.y + g.screenHeight - 1
 		ebitenutil.DebugPrint(screen,
-			fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d mouse:%dx%d screen.Bounds:%dx%d win:%dx%d",
+			fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d mouse:%dx%d screen.Bounds:%dx%d win:%dx%d drawnTiles:%d",
 				ebiten.ActualTPS(), ebiten.ActualFPS(),
 				tileDimX, tileDimY,
 				cam.x, cam.y,
@@ -240,7 +240,8 @@ func (g *game) Draw(screen *ebiten.Image) {
 				screen.Bounds().Dx(),
 				screen.Bounds().Dy(),
 				g.windowWidth,
-				g.windowHeight))
+				g.windowHeight,
+				drawnTiles))
 
 		colorBlue := color.RGBA{0, 0, 0xff, 0xff}
 		drawDebugRect(screen, 1, 1, float64(g.screenWidth), float64(g.screenHeight), colorBlue)
