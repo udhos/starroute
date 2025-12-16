@@ -8,15 +8,23 @@ Highest value minerals in the galaxy
 |---------|----------------|
 | Antihydrogen | 62T (trillion) |
 | Californium-252 | 27M |
+| Red Diamond | 2M |
+| Curium-244 | 160K |
 | Helium-3 | 100K |
-| Tritium  | 30K |
+| Tritium | 30K |
 | Plutonium-238 | 12K |
 | Diamond | 10K |
 | Uranium-233 | 8K |
+| Promethium-147 | 4K |
+| Americium-241 | 2K |
 | Rhodium | 500 |
+| Crystalline Osmium | 400 |
 | Iridium | 150 |
+| Osmium | 100 |
 | Gold | 50 |
 | Platinum | 40 |
+| Palladium | 30 |
+| Ruthenium | 20 |
 
 # Ebiten References
 
