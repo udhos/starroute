@@ -109,7 +109,7 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
 				sum++
 				i++
 			}
-			i += xAmount - 1
+			i += xCount - xAmount
 		}
 	}
 
@@ -168,7 +168,8 @@ var sampleLayers = [][]int{
 // tileXAmount is the amount of tiles to be drawn per row.
 // tileYAmount is the amount of rows of tiles to be drawn.
 // The caller must then draw tileXAmount tiles starting from tileOffset,
-// then skip tileXAmount tiles, and hence forth, up to tileYAmount rows.
+// then skip tileXAmount-layerTileWidth tiles, and so forth,
+// up to tileYAmount rows.
 func findTilemapWindow(layerTiles, layerTileWidth, tilePixelWidth,
 	winX, winY, winWidth, winHeight int) (tileOffset, tileXAmount,
 	tileYAmount int) {
