@@ -123,7 +123,7 @@ var sampleLayers = [][]int{
 	},
 }
 
-// findTilemapWindow within a layer, composed of layerTiles tiles with
+// findTilemapWindow finds within a layer, composed of layerTiles tiles with
 // layerTileWidth tiles per row and width tilePixelWidth pixels, the subset
 // of tiles that must be drawn to completely fill the windown at
 // winX, winY of size winWidth x winHeight. Only tiles
@@ -149,6 +149,20 @@ func findTilemapWindow(layerTiles, layerTileWidth, tilePixelWidth,
 	// Calculate the number of tiles in each dimension
 	tileXAmount = endCol - startCol + 1
 	tileYAmount = endRow - startRow + 1
+
+	// Calculate the layer height based on total tiles and width
+	layerTileHeight := layerTiles / layerTileWidth
+	if layerTiles%layerTileWidth != 0 {
+		layerTileHeight++
+	}
+
+	// Clamp to layer boundaries
+	if tileXAmount > layerTileWidth-startCol {
+		tileXAmount = layerTileWidth - startCol
+	}
+	if tileYAmount > layerTileHeight-startRow {
+		tileYAmount = layerTileHeight - startRow
+	}
 
 	// Calculate the linear offset of the first tile
 	tileOffset = startRow*layerTileWidth + startCol
