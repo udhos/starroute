@@ -8,6 +8,9 @@ import (
 	"math"
 	"os"
 
+	"github.com/ebitenui/ebitenui"
+	"github.com/ebitenui/ebitenui/input"
+	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -44,6 +47,9 @@ type game struct {
 	windowHeight int
 
 	mouseX, mouseY int
+
+	ui        *ebitenui.UI
+	headerLbl *widget.Text
 }
 
 func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
@@ -75,6 +81,9 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 
 		sceneCurrent: 0,
 	}
+
+	// This adds the root container to the UI, so that it will be rendered.
+	g.ui = g.getEbitenUI()
 
 	audioContext := audio.NewContext(music.SampleRate)
 
@@ -187,6 +196,17 @@ func (g *game) Update() error {
 
 	g.mouseX, g.mouseY = ebiten.CursorPosition()
 
+	//
+	// ui
+	//
+	g.ui.Update()
+	// Update the Label text to indicate if the ui is currently being hovered over or not
+	g.headerLbl.Label = fmt.Sprintf("Game Demo!\nUI is hovered: %t", input.UIHovered)
+	// Log out if we have clicked on the gamefield and NOT the ui
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !input.UIHovered {
+		log.Println("Mouse clicked on gamefield")
+	}
+
 	if g.pause {
 		return nil
 	}
@@ -223,6 +243,8 @@ func (g *game) Draw(screen *ebiten.Image) {
 	sc := g.scenes[g.sceneCurrent]
 
 	drawnTiles := sc.draw(screen, g.debug)
+
+	g.ui.Draw(screen)
 
 	if g.debug {
 		tileDimX, tileDimY := sc.tiles.tilePixelDimensions()
