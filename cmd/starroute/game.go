@@ -22,7 +22,7 @@ import (
 
 const (
 	pi2        = 2 * math.Pi
-	maxAngle   = float64(100) // custom number of angles in the circle
+	maxAngle   = float64(200) // custom number of angles in the circle
 	oneQuarter = maxAngle / 4
 	oneEighth  = maxAngle / 8
 )
@@ -58,9 +58,18 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	// Load an image from the embedded image data.
 	//
 
-	const scaleAlpha = 0.8
+	var ebitenImage *ebiten.Image
+	var rotationScene1Sprite2 float64
 
-	ebitenImage := createImage(bytes.NewReader(images.Ebiten_png), scaleAlpha)
+	if false {
+		const scaleAlpha = 0.8
+		rotationScene1Sprite2 = oneEighth
+		ebitenImage = createImage(bytes.NewReader(images.Ebiten_png), scaleAlpha)
+	} else {
+		const scaleAlpha = 1
+		rotationScene1Sprite2 = -oneQuarter
+		ebitenImage = createImage(bytes.NewReader(mustLoadAsset("newGame", "body_01.png")), scaleAlpha)
+	}
 
 	const (
 		// FIXME: these should come from tilemap data
@@ -91,7 +100,7 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 
 	scene1 := newScene(g, ts, sceneTrack1, audioContext)
 	scene1.addSprite(50, 50, 0, ebitenImage)
-	scene1.addSprite(100, 100, oneEighth, ebitenImage)
+	scene1.addSprite(100, 100, rotationScene1Sprite2, ebitenImage)
 
 	scene2 := newScene(g, ts, sceneTrack2, audioContext)
 	scene2.addSprite(150, 150, 0, ebitenImage)
