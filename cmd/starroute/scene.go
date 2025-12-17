@@ -27,15 +27,17 @@ type scene struct {
 	musicTrack   int
 	audioContext *audio.Context
 	cam          *camera
+	g            *game
 }
 
-func newScene(ts *tiles, musicTrack int, audioContext *audio.Context) scene {
-	sc := scene{
+func newScene(g *game, ts *tiles, musicTrack int, audioContext *audio.Context) *scene {
+	sc := &scene{
+		g:            g,
 		tiles:        ts,
 		musicTrack:   musicTrack,
 		audioContext: audioContext,
-		cam:          &camera{},
 	}
+	sc.cam = newCamera(sc)
 	return sc
 }
 

@@ -15,8 +15,16 @@ type tiles struct {
 	tileLayerXCount int
 }
 
-func (ts tiles) dimensions() (int, int) {
-	return ts.tileSize * ts.tileLayerXCount, ts.tileSize * len(ts.layers[0]) / ts.tileLayerXCount
+func (ts tiles) tilePixelDimensions() (int, int) {
+	return ts.tilePixelWidth(), ts.tilePixelHeight()
+}
+
+func (ts tiles) tilePixelWidth() int {
+	return ts.tileSize * ts.tileLayerXCount
+}
+
+func (ts tiles) tilePixelHeight() int {
+	return ts.tileSize * len(ts.layers[0]) / ts.tileLayerXCount
 }
 
 func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *tiles {
@@ -40,7 +48,7 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 
 	log.Printf("Tile layer X count: %d", tileLayerXCount)
 
-	dimX, dimY := ts.dimensions()
+	dimX, dimY := ts.tilePixelDimensions()
 
 	log.Printf("Tile layer size: %dx%d", dimX, dimY)
 

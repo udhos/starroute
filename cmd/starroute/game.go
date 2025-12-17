@@ -29,7 +29,7 @@ type game struct {
 	pause bool
 	debug bool
 
-	scenes       []scene
+	scenes       []*scene
 	sceneCurrent int
 
 	defaultScreenWidth  int
@@ -63,25 +63,6 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 		tileLayerXCount      = 15
 	)
 
-	audioContext := audio.NewContext(music.SampleRate)
-
-	ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, sampleLayers, tileLayerXCount)
-
-	scene1 := newScene(ts, sceneTrack1, audioContext)
-	scene1.addSprite(50, 50, 0, ebitenImage)
-	scene1.addSprite(100, 100, oneEighth, ebitenImage)
-
-	scene2 := newScene(ts, sceneTrack2, audioContext)
-	scene2.addSprite(150, 150, 0, ebitenImage)
-	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
-
-	const tileEdgeCount = 200 // 200x200=40000
-	layers := [][]int{generateLayer(tileEdgeCount)}
-	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
-
-	scene3 := newScene(ts3, sceneTrack3, audioContext)
-	scene3.addSprite(100, 50, 0, ebitenImage)
-
 	g := &game{
 		debug: true,
 
@@ -92,9 +73,29 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 		screenWidth:  defaultScreenWidth,
 		screenHeight: defaultScreenHeight,
 
-		scenes:       []scene{scene1, scene2, scene3},
 		sceneCurrent: 0,
 	}
+
+	audioContext := audio.NewContext(music.SampleRate)
+
+	ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, sampleLayers, tileLayerXCount)
+
+	scene1 := newScene(g, ts, sceneTrack1, audioContext)
+	scene1.addSprite(50, 50, 0, ebitenImage)
+	scene1.addSprite(100, 100, oneEighth, ebitenImage)
+
+	scene2 := newScene(g, ts, sceneTrack2, audioContext)
+	scene2.addSprite(150, 150, 0, ebitenImage)
+	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
+
+	const tileEdgeCount = 200 // 200x200=40000
+	layers := [][]int{generateLayer(tileEdgeCount)}
+	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
+
+	scene3 := newScene(g, ts3, sceneTrack3, audioContext)
+	scene3.addSprite(100, 50, 0, ebitenImage)
+
+	g.scenes = []*scene{scene1, scene2, scene3}
 
 	g.scenes[g.sceneCurrent].musicStart()
 
@@ -224,19 +225,18 @@ func (g *game) Draw(screen *ebiten.Image) {
 	drawnTiles := sc.draw(screen, g.debug)
 
 	if g.debug {
-		tileDimX, tileDimY := sc.tiles.dimensions()
+		tileDimX, tileDimY := sc.tiles.tilePixelDimensions()
 		cam := sc.cam
 		camLastX := cam.x + g.screenWidth - 1
 		camLastY := cam.y + g.screenHeight - 1
 		ebitenutil.DebugPrint(screen,
-			fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d mouse:%dx%d screen.Bounds:%dx%d win:%dx%d drawnTiles:%d",
+			fmt.Sprintf("TPS:%0.1f FPS:%0.1f tilemap:%dx%d cam:%dx%d-%dx%d camMax:%dx%d mouse:%dx%d win:%dx%d drawnTiles:%d",
 				ebiten.ActualTPS(), ebiten.ActualFPS(),
 				tileDimX, tileDimY,
 				cam.x, cam.y,
 				camLastX, camLastY,
+				cam.maxX(), cam.maxY(),
 				g.mouseX, g.mouseY,
-				screen.Bounds().Dx(),
-				screen.Bounds().Dy(),
 				g.windowWidth,
 				g.windowHeight,
 				drawnTiles))
