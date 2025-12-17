@@ -20,10 +20,6 @@ const (
 	sceneTrack3
 )
 
-type camera struct {
-	x, y int
-}
-
 type scene struct {
 	sprites      []*sprite
 	tiles        *tiles

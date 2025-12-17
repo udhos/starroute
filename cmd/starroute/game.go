@@ -104,8 +104,6 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	return g
 }
 
-const camPanStep = 5
-
 // Update is called every tick. Tick is a time unit for logical updating.
 // The default value is 1/60 [s], then Update is called 60 times per second by
 // default (i.e. an Ebitengine game works in 60 ticks-per-second).
@@ -120,16 +118,16 @@ func (g *game) Update() error {
 
 		switch p {
 		case ebiten.KeyUp:
-			g.scenes[g.sceneCurrent].cam.y = max(g.scenes[g.sceneCurrent].cam.y-camPanStep, 0)
+			g.scenes[g.sceneCurrent].cam.stepUp()
 			continue
 		case ebiten.KeyDown:
-			g.scenes[g.sceneCurrent].cam.y += camPanStep
+			g.scenes[g.sceneCurrent].cam.stepDown()
 			continue
 		case ebiten.KeyLeft:
-			g.scenes[g.sceneCurrent].cam.x = max(g.scenes[g.sceneCurrent].cam.x-camPanStep, 0)
+			g.scenes[g.sceneCurrent].cam.stepRight()
 			continue
 		case ebiten.KeyRight:
-			g.scenes[g.sceneCurrent].cam.x += camPanStep
+			g.scenes[g.sceneCurrent].cam.stepLeft()
 			continue
 		case ebiten.KeyEscape:
 			log.Printf("ESC pressed, exiting")
