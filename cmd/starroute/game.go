@@ -8,14 +8,13 @@ import (
 	"math"
 	"os"
 
-	"github.com/ebitenui/ebitenui"
-	"github.com/ebitenui/ebitenui/input"
-	"github.com/ebitenui/ebitenui/widget"
+	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/images"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/udhos/starroute/music"
 )
@@ -48,9 +47,11 @@ type game struct {
 
 	mouseX, mouseY int
 
-	ui *ebitenui.UI
+	//ui *ebitenui.UI
 	//headerLbl     *widget.Text
-	coordinateLbl *widget.Text
+	//coordinateLbl   *widget.Text
+	mplusFaceSource *text.GoTextFaceSource
+	uiCoord         string
 }
 
 func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
@@ -72,6 +73,11 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 		ebitenImage = createImage(bytes.NewReader(mustLoadAsset("newGame", "body_01.png")), scaleAlpha)
 	}
 
+	mplusFaceSource, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	const (
 		// FIXME: these should come from tilemap data
 		tileSize             = 16
@@ -90,20 +96,23 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 		screenHeight: defaultScreenHeight,
 
 		sceneCurrent: 0,
+
+		mplusFaceSource: mplusFaceSource,
+		uiCoord:         "? ?",
 	}
 
 	// This adds the root container to the UI, so that it will be rendered.
-	g.ui = g.getEbitenUI()
+	//g.ui = g.getEbitenUI()
 
 	audioContext := audio.NewContext(music.SampleRate)
 
 	ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, sampleLayers, tileLayerXCount)
 
-	scene1 := newScene(g, ts, sceneTrack1, audioContext)
+	scene1 := newScene(g, ts, sceneTrack1, audioContext, false)
 	scene1.addSprite(50, 50, 0, ebitenImage)
 	scene1.addSprite(100, 100, rotationScene1Sprite2, ebitenImage)
 
-	scene2 := newScene(g, ts, sceneTrack2, audioContext)
+	scene2 := newScene(g, ts, sceneTrack2, audioContext, false)
 	scene2.addSprite(150, 150, 0, ebitenImage)
 	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
 
@@ -111,8 +120,10 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	layers := [][]int{generateLayer(tileEdgeCount)}
 	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 
-	scene3 := newScene(g, ts3, sceneTrack3, audioContext)
-	scene3.addSprite(100, 50, 0, ebitenImage)
+	scene3 := newScene(g, ts3, sceneTrack3, audioContext, true)
+	x := scene3.tiles.tilePixelWidth() / 2
+	y := scene3.tiles.tilePixelHeight() / 2
+	scene3.addSprite(float64(x), float64(y), -oneQuarter, ebitenImage)
 
 	g.scenes = []*scene{scene1, scene2, scene3}
 
@@ -209,20 +220,24 @@ func (g *game) Update() error {
 	//
 	// ui
 	//
-	g.ui.Update()
+	//g.ui.Update()
 	// Update the Label text to indicate if the ui is currently being hovered over or not
 	//g.headerLbl.Label = fmt.Sprintf("Game Demo!\nUI is hovered: %t", input.UIHovered)
-	g.coordinateLbl.Label = g.getCurrentScene().getWorldCoordinates() // placeholder for coordinate display
+	//g.coordinateLbl.Label = g.getCurrentScene().getWorldCoordinates() // placeholder for coordinate display
 	// Log out if we have clicked on the gamefield and NOT the ui
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !input.UIHovered {
-		log.Println("Mouse clicked on gamefield")
-	}
+	/*
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !input.UIHovered {
+			log.Println("Mouse clicked on gamefield")
+		}
+	*/
 
 	if g.pause {
 		return nil
 	}
 
 	g.getCurrentScene().update()
+
+	g.uiCoord = g.getCurrentScene().getWorldCoordinates()
 
 	return nil
 }
@@ -259,7 +274,9 @@ func (g *game) Draw(screen *ebiten.Image) {
 
 	drawnTiles := sc.draw(screen, g.debug)
 
-	g.ui.Draw(screen)
+	//g.ui.Draw(screen)
+
+	g.drawSimpleUI(screen)
 
 	if g.debug {
 		tileDimX, tileDimY := sc.tiles.tilePixelDimensions()

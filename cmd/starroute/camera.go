@@ -7,8 +7,27 @@ type camera struct {
 
 const camPanStep = 5
 
-func newCamera(sc *scene) *camera {
-	return &camera{sc: sc}
+func newCamera(sc *scene, centralize bool) *camera {
+	c := &camera{sc: sc}
+
+	if centralize {
+		c.centralize()
+		c.clamp()
+	}
+
+	return c
+}
+
+func (c *camera) mid() (int, int) {
+	camXmax := c.maxX()
+	camYmax := c.maxY()
+	return camXmax / 2, camYmax / 2
+}
+
+// centralize centers the camera on the current scene.
+func (c *camera) centralize() {
+	c.x, c.y = c.mid()
+	c.clamp()
 }
 
 // clamp forces the camera to remain within the tilemap.
