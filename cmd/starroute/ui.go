@@ -22,24 +22,96 @@ func (g *game) getEbitenUI() *ebitenui.UI {
 		widget.ContainerOpts.Layout(widget.NewAnchorLayout(widget.AnchorLayoutOpts.Padding(widget.NewInsetsSimple(5)))),
 	)
 
+	//
+	// header
+	//
+
 	// Because this container has a backgroundImage set we track that the ui is hovered over.
 	headerContainer := widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(eimage.NewNineSliceColor(color.NRGBA{R: 200, G: 200, B: 200, A: 100})),
-		widget.ContainerOpts.WidgetOpts(
-			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
-				VerticalPosition:   widget.AnchorLayoutPositionStart,
-				HorizontalPosition: widget.AnchorLayoutPositionCenter,
-				StretchHorizontal:  true,
-				StretchVertical:    false,
+
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(
+				widget.DirectionVertical,
+			),
+			widget.RowLayoutOptions.Padding(widget.RowLayoutOptions{}, &widget.Insets{
+				Top:    0,
+				Left:   5,
+				Right:  5,
+				Bottom: 0,
 			}),
-			// Uncomment this to not track that you are hovering over this header
-			// widget.WidgetOpts.TrackHover(false),
 		),
-		widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+		),
+
+		/*
+			widget.ContainerOpts.WidgetOpts(
+				widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+					VerticalPosition:   widget.AnchorLayoutPositionStart,
+					HorizontalPosition: widget.AnchorLayoutPositionCenter,
+					StretchHorizontal:  false,
+					StretchVertical:    false,
+				}),
+
+
+					widget.ContainerOpts.WidgetOpts(
+						widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+							VerticalPosition:   widget.AnchorLayoutPositionStart,
+							HorizontalPosition: widget.AnchorLayoutPositionCenter,
+							StretchHorizontal:  true,
+							StretchVertical:    false,
+						}),
+						// Uncomment this to not track that you are hovering over this header
+						// widget.WidgetOpts.TrackHover(false),
+					),
+					widget.ContainerOpts.Layout(widget.NewAnchorLayout()),
+		*/
 	)
 
-	g.headerLbl = widget.NewText(
-		widget.TextOpts.Text("Game Demo!", &face, color.White),
+	/*
+		g.headerLbl = widget.NewText(
+			widget.TextOpts.Text("Game Demo!", &face, color.White),
+			widget.TextOpts.Position(widget.TextPositionCenter, widget.TextPositionCenter),
+			widget.TextOpts.WidgetOpts(
+				widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+					VerticalPosition:   widget.AnchorLayoutPositionStart,
+					HorizontalPosition: widget.AnchorLayoutPositionCenter,
+					StretchHorizontal:  false,
+					StretchVertical:    false,
+				}),
+				// Uncomment to force tracking hover of this element
+				// widget.WidgetOpts.TrackHover(true),
+			),
+		)
+		headerContainer.AddChild(g.headerLbl)
+	*/
+	rootContainer.AddChild(headerContainer)
+
+	// Create a coordinate widget to show where we are located in the world
+	coordinateContainer := widget.NewContainer(
+		//widget.ContainerOpts.BackgroundImage(eimage.NewNineSliceColor(color.NRGBA{R: 200, G: 200, B: 200, A: 100})),
+
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(
+				widget.DirectionVertical,
+			),
+		),
+
+		/*
+			widget.ContainerOpts.WidgetOpts(
+				widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
+					VerticalPosition:   widget.AnchorLayoutPositionStart,
+					HorizontalPosition: widget.AnchorLayoutPositionStart,
+					StretchHorizontal:  false,
+					StretchVertical:    false,
+				}),
+		*/
+
+		// Uncomment this to not track that you are hovering over this header
+		// widget.WidgetOpts.TrackHover(false),
+		),
+	)
+	g.coordinateLbl = widget.NewText(
+		widget.TextOpts.Text("location!!!!!", &face, color.White),
 		widget.TextOpts.Position(widget.TextPositionCenter, widget.TextPositionCenter),
 		widget.TextOpts.WidgetOpts(
 			widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
@@ -52,8 +124,12 @@ func (g *game) getEbitenUI() *ebitenui.UI {
 			// widget.WidgetOpts.TrackHover(true),
 		),
 	)
-	headerContainer.AddChild(g.headerLbl)
-	rootContainer.AddChild(headerContainer)
+	coordinateContainer.AddChild(g.coordinateLbl)
+	headerContainer.AddChild(coordinateContainer)
+
+	//
+	// footer
+	//
 
 	hProgressbar := widget.NewProgressBar(
 		widget.ProgressBarOpts.WidgetOpts(

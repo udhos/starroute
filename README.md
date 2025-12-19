@@ -47,3 +47,5 @@ Highest value minerals in the galaxy
 - Go Tiled Loader: https://github.com/lafriks/go-tiled
 
 - Kenney Assets: https://kenney.nl/
+
+- Ebiten UI: https://ebitenui.github.io

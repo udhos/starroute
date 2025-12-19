@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -117,4 +118,66 @@ func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
 	}
 
 	return countTiles
+}
+
+// getWorldCoordinates returns a string representing the current world coordinates.
+// Example: "12N 34E"
+// It is used in the game UI to give feedback to the player about their current location.
+func (sc *scene) getWorldCoordinates() string {
+	camX := sc.cam.x
+	camY := sc.cam.y
+	camXmax := sc.cam.maxX()
+	camYmax := sc.cam.maxY()
+	camXmid := camXmax / 2
+	camYmid := camYmax / 2
+
+	// horizontal: x ranges from 0 (left) to camXmax (right)
+	// vertical: y ranges from 0 (top) to camYmax (bottom)
+	//
+	// (camXmid, camYmid) is the center of the screen and represents "0N 0E"
+	// Values to the left of camXmid are west (W), to the right are east (E)
+	// Values above camYmid are north (N), below are south (S)
+	//
+	// Horizontal examples:
+	// camX = 0 => 180W
+	// camX = camXmid => 0E
+	// camX = camXmax => 180E
+	//
+	// Vertical examples:
+	// camY = 0 => 90N
+	// camY = camYmid => 0N
+	// camY = camYmax => 90S
+
+	var latDeg int
+	var latDir string
+	var lonDeg int
+	var lonDir string
+
+	// Latitude (north-south)
+	if camY < camYmid {
+		latDeg = int(float64(camYmid-camY) * 90.0 / float64(camYmid))
+		latDir = "N"
+	} else {
+		latDeg = int(float64(camY-camYmid) * 90.0 / float64(camYmid))
+		latDir = "S"
+	}
+
+	// Longitude (east-west)
+	if camX < camXmid {
+		lonDeg = int(float64(camXmid-camX) * 180.0 / float64(camXmid))
+		lonDir = "W"
+	} else {
+		lonDeg = int(float64(camX-camXmid) * 180.0 / float64(camXmid))
+		lonDir = "E"
+	}
+
+	// use only absolute degrees
+	if lonDeg < 0 {
+		lonDeg = -lonDeg
+	}
+	if latDeg < 0 {
+		latDeg = -latDeg
+	}
+
+	return fmt.Sprintf("%d%s %d%s", latDeg, latDir, lonDeg, lonDir)
 }

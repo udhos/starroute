@@ -48,8 +48,9 @@ type game struct {
 
 	mouseX, mouseY int
 
-	ui        *ebitenui.UI
-	headerLbl *widget.Text
+	ui *ebitenui.UI
+	//headerLbl     *widget.Text
+	coordinateLbl *widget.Text
 }
 
 func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
@@ -115,7 +116,7 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 
 	g.scenes = []*scene{scene1, scene2, scene3}
 
-	g.scenes[g.sceneCurrent].musicStart()
+	g.getCurrentScene().musicStart()
 
 	// See comment in game.Layout method.
 	log.Printf("Game screen size: %dx%d", g.screenWidth, g.screenHeight)
@@ -137,16 +138,16 @@ func (g *game) Update() error {
 
 		switch p {
 		case ebiten.KeyUp:
-			g.scenes[g.sceneCurrent].cam.stepUp()
+			g.getCurrentScene().cam.stepUp()
 			continue
 		case ebiten.KeyDown:
-			g.scenes[g.sceneCurrent].cam.stepDown()
+			g.getCurrentScene().cam.stepDown()
 			continue
 		case ebiten.KeyLeft:
-			g.scenes[g.sceneCurrent].cam.stepRight()
+			g.getCurrentScene().cam.stepRight()
 			continue
 		case ebiten.KeyRight:
-			g.scenes[g.sceneCurrent].cam.stepLeft()
+			g.getCurrentScene().cam.stepLeft()
 			continue
 		case ebiten.KeyEscape:
 			log.Printf("ESC pressed, exiting")
@@ -210,7 +211,8 @@ func (g *game) Update() error {
 	//
 	g.ui.Update()
 	// Update the Label text to indicate if the ui is currently being hovered over or not
-	g.headerLbl.Label = fmt.Sprintf("Game Demo!\nUI is hovered: %t", input.UIHovered)
+	//g.headerLbl.Label = fmt.Sprintf("Game Demo!\nUI is hovered: %t", input.UIHovered)
+	g.coordinateLbl.Label = g.getCurrentScene().getWorldCoordinates() // placeholder for coordinate display
 	// Log out if we have clicked on the gamefield and NOT the ui
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !input.UIHovered {
 		log.Println("Mouse clicked on gamefield")
@@ -220,19 +222,23 @@ func (g *game) Update() error {
 		return nil
 	}
 
-	g.scenes[g.sceneCurrent].update()
+	g.getCurrentScene().update()
 
 	return nil
 }
 
+func (g *game) getCurrentScene() *scene {
+	return g.scenes[g.sceneCurrent]
+}
+
 func (g *game) switchScene() {
-	g.scenes[g.sceneCurrent].musicStop()
+	g.getCurrentScene().musicStop()
 
 	g.sceneCurrent = (g.sceneCurrent + 1) % len(g.scenes)
 	log.Printf("Switching to scene %d of %d",
 		g.sceneCurrent+1, len(g.scenes))
 
-	g.scenes[g.sceneCurrent].musicStart()
+	g.getCurrentScene().musicStart()
 }
 
 // Draw is called every frame. Frame is a time unit for rendering and this
@@ -249,7 +255,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 	backgroundColor := color.RGBA{R: 128, G: 128, B: 128, A: 255}
 	screen.Fill(backgroundColor)
 
-	sc := g.scenes[g.sceneCurrent]
+	sc := g.getCurrentScene()
 
 	drawnTiles := sc.draw(screen, g.debug)
 
