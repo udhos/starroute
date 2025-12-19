@@ -95,31 +95,38 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
 
 	var sum int
 
-	for _, l := range ts.layers {
-		offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
-			cam.x, cam.y, screenWidth, screenHeight)
+	if cam.cyclic {
+		// cyclic
 
-		i := offset
-		for range yAmount {
-			for range xAmount {
-				t := l[i]
+	} else {
+		// non-cyclic
 
-				op := &ebiten.DrawImageOptions{}
-				screenX := (i % xCount) * tileSize
-				screenY := (i / xCount) * tileSize
-				op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
+		for _, l := range ts.layers {
+			offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
+				cam.x, cam.y, screenWidth, screenHeight)
 
-				sx := (t % tileImageXCount) * tileSize
-				sy := (t / tileImageXCount) * tileSize
-				subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-				screen.DrawImage(subImage, op)
+			i := offset
+			for range yAmount {
+				for range xAmount {
+					t := l[i]
 
-				sum++
-				i++
+					op := &ebiten.DrawImageOptions{}
+					screenX := (i % xCount) * tileSize
+					screenY := (i / xCount) * tileSize
+					op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
+
+					sx := (t % tileImageXCount) * tileSize
+					sy := (t / tileImageXCount) * tileSize
+					subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+					screen.DrawImage(subImage, op)
+
+					sum++
+					i++
+				}
+				i += xCount - xAmount
 			}
-			i += xCount - xAmount
 		}
-	}
+	} // non-cyclic
 
 	return sum
 }

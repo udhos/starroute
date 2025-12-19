@@ -289,7 +289,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 
 	g.drawSimpleUI(screen)
 
-	if sc.cam.cyclic {
+	if true {
 		red := color.RGBA{0xff, 0, 0, 0xff}
 		drawDebugAxis(screen, float32(sc.cam.x), float32(sc.cam.y),
 			float32(sc.tiles.tilePixelWidth()), float32(sc.tiles.tilePixelHeight()), red)

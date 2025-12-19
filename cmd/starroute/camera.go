@@ -34,11 +34,20 @@ func (c *camera) centralize() {
 // clamp forces the camera to remain within the tilemap.
 func (c *camera) clamp() {
 	if c.cyclic {
-		// camera wraps around tilemap edges
-		c.x = c.x % c.sc.tiles.tilePixelWidth()
-		c.y = c.y % c.sc.tiles.tilePixelHeight()
+		// cyclic camera wraps around tilemap edges
+		if c.x < 0 {
+			c.x += c.sc.tiles.tilePixelWidth()
+		} else {
+			c.x = c.x % c.sc.tiles.tilePixelWidth()
+		}
+		if c.y < 0 {
+			c.y += c.sc.tiles.tilePixelHeight()
+		} else {
+			c.y = c.y % c.sc.tiles.tilePixelHeight()
+		}
 		return
 	}
+	// non-cyclic camera cannot cross tilemap edges
 	c.x = max(min(c.x, c.maxX()), 0)
 	c.y = max(min(c.y, c.maxY()), 0)
 }
