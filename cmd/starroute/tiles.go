@@ -115,13 +115,13 @@ func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]qua
 		{draw: drawQuadrant2,
 			camOffsetX: widthQuads1and3, camOffsetY: 0,
 			worldX: 0, worldY: cam.y,
-			width: widthQuads2and4, height: heightQuads1and2},
+			width: widthQuads2and4, height: min(screenHeight, heightQuads1and2)},
 
 		// quadrant 3: bottom-left
 		{draw: drawQuadrant3,
 			camOffsetX: 0, camOffsetY: heightQuads1and2,
 			worldX: cam.x, worldY: 0,
-			width: widthQuads1and3, height: heightQuads3and4},
+			width: min(screenWidth, widthQuads1and3), height: heightQuads3and4},
 
 		// quadrant 4: bottom-right
 		{draw: drawQuadrant4,
