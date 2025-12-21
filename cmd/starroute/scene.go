@@ -27,14 +27,16 @@ type scene struct {
 	g            *game
 }
 
-func newScene(g *game, ts *tiles, musicTrack int, audioContext *audio.Context, centralizeCamera bool) *scene {
+func newScene(g *game, ts *tiles, musicTrack int,
+	audioContext *audio.Context, cyclicCamera,
+	centralizeCamera bool) *scene {
 	sc := &scene{
 		g:            g,
 		tiles:        ts,
 		musicTrack:   musicTrack,
 		audioContext: audioContext,
 	}
-	sc.cam = newCamera(sc, centralizeCamera)
+	sc.cam = newCamera(sc, cyclicCamera, centralizeCamera)
 	return sc
 }
 
@@ -98,7 +100,14 @@ func (sc *scene) update() {
 }
 
 func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
-	countTiles := sc.tiles.draw(screen, sc.cam)
+
+	var quads [4]quad
+
+	if sc.cam.cyclic {
+		quads = sc.tiles.getQuadrants(sc.cam, screen.Bounds().Dx(), screen.Bounds().Dy())
+	}
+
+	countTiles := sc.tiles.draw(screen, sc.cam, debug, &quads)
 
 	// Draw each sprite.
 	// DrawImage can be called many many times, but in the implementation,
@@ -107,14 +116,39 @@ func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
 	// For more detail, see:
 	// https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
 
-	camX := float64(sc.cam.x)
-	camY := float64(sc.cam.y)
+	// For cyclic camera, sprites must be drawn once per
+	// visible quadrant using the quadrant's world origin and cam offset so
+	// they appear in wrapped positions.
+	if sc.cam.cyclic {
+		for _, q := range quads {
+			if !q.draw {
+				continue
+			}
+			// camX/camY expected by sprite.draw are subtracted from sprite
+			// world coordinates. To achieve the same placement used for
+			// tiles (screen = world - worldX + camOffset), pass
+			// cam = worldX - camOffset.
+			camX := float64(q.worldX - q.camOffsetX)
+			camY := float64(q.worldY - q.camOffsetY)
 
-	var op ebiten.DrawImageOptions
+			var op ebiten.DrawImageOptions
+			for i := 0; i < len(sc.sprites); i++ {
+				op.GeoM.Reset()
+				sc.sprites[i].draw(op, screen, camX, camY, debug)
+			}
+		}
+	} else {
+		// For non-cyclic camera draw once.
 
-	for i := 0; i < len(sc.sprites); i++ {
-		op.GeoM.Reset()
-		sc.sprites[i].draw(op, screen, camX, camY, debug)
+		camX := float64(sc.cam.x)
+		camY := float64(sc.cam.y)
+
+		var op ebiten.DrawImageOptions
+
+		for i := 0; i < len(sc.sprites); i++ {
+			op.GeoM.Reset()
+			sc.sprites[i].draw(op, screen, camX, camY, debug)
+		}
 	}
 
 	return countTiles
