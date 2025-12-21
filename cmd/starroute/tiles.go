@@ -94,8 +94,8 @@ func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]qua
 	tilemapWidth := ts.tilePixelWidth()
 	tilemapHeight := ts.tilePixelHeight()
 
-	widthQuads1and3 := tilemapWidth - cam.x
-	heightQuads1and2 := tilemapHeight - cam.y
+	widthQuads1and3 := min(screenWidth, tilemapWidth-cam.x)
+	heightQuads1and2 := min(screenHeight, tilemapHeight-cam.y)
 	widthQuads2and4 := screenWidth - (tilemapWidth - cam.x)
 	heightQuads3and4 := screenHeight - (tilemapHeight - cam.y)
 
@@ -105,29 +105,36 @@ func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]qua
 
 	return [4]quad{
 		// quadrant 1: top-left
-		{draw: true,
+		{
+			draw:       true,
 			camOffsetX: 0, camOffsetY: 0,
 			worldX: cam.x, worldY: cam.y,
-			width:  min(screenWidth, widthQuads1and3),
-			height: min(screenHeight, heightQuads1and2)},
+			width: widthQuads1and3, height: heightQuads1and2,
+		},
 
 		// quadrant 2: top-right
-		{draw: drawQuadrant2,
+		{
+			draw:       drawQuadrant2,
 			camOffsetX: widthQuads1and3, camOffsetY: 0,
 			worldX: 0, worldY: cam.y,
-			width: widthQuads2and4, height: min(screenHeight, heightQuads1and2)},
+			width: widthQuads2and4, height: heightQuads1and2,
+		},
 
 		// quadrant 3: bottom-left
-		{draw: drawQuadrant3,
+		{
+			draw:       drawQuadrant3,
 			camOffsetX: 0, camOffsetY: heightQuads1and2,
 			worldX: cam.x, worldY: 0,
-			width: min(screenWidth, widthQuads1and3), height: heightQuads3and4},
+			width: widthQuads1and3, height: heightQuads3and4,
+		},
 
 		// quadrant 4: bottom-right
-		{draw: drawQuadrant4,
+		{
+			draw:       drawQuadrant4,
 			camOffsetX: widthQuads1and3, camOffsetY: heightQuads1and2,
 			worldX: 0, worldY: 0,
-			width: widthQuads2and4, height: heightQuads3and4},
+			width: widthQuads2and4, height: heightQuads3and4,
+		},
 	}
 }
 
