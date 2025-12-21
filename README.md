@@ -88,3 +88,18 @@ Highest value minerals in the galaxy
 - Ebiten UI: https://ebitenui.github.io
 
 - Debug UI: https://github.com/ebitengine/debugui
+
+- Short sound effect
+
+Creating an audio.Player is not expensive. It is fine to create one player for one short sound effect. For example, this code is totally fine:
+
+```golang
+// PlaySE plays a sound effect.
+func PlaySE(bs []byte) {
+    sePlayer := audioContext.NewPlayerFromBytes(bs)
+    // sePlayer is never GCed as long as it plays.
+    sePlayer.Play()
+}
+```
+
+https://ebitengine.org/en/documents/performancetips.html
