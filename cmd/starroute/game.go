@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/color"
 	"log"
 	"math"
 	"os"
 
+	"github.com/ebitengine/debugui"
 	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -52,6 +54,8 @@ type game struct {
 	//coordinateLbl   *widget.Text
 	mplusFaceSource *text.GoTextFaceSource
 	uiCoord         string
+
+	debugui debugui.DebugUI
 }
 
 func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
@@ -249,6 +253,39 @@ func (g *game) Update() error {
 
 	g.uiCoord = g.getCurrentScene().getWorldCoordinates()
 
+	if _, err := g.debugui.Update(func(ctx *debugui.Context) error {
+
+		sc := g.getCurrentScene()
+		quads := sc.tiles.getQuadrants(sc.cam, g.screenWidth, g.screenHeight)
+		q1 := fmt.Sprintf("Q1: x=%d y=%d w=%d h=%d draw=%t", quads[0].worldX, quads[0].worldY, quads[0].width, quads[0].height, quads[0].draw)
+		q2 := fmt.Sprintf("Q2: x=%d y=%d w=%d h=%d draw=%t", quads[1].worldX, quads[1].worldY, quads[1].width, quads[1].height, quads[1].draw)
+		q3 := fmt.Sprintf("Q3: x=%d y=%d w=%d h=%d draw=%t", quads[2].worldX, quads[2].worldY, quads[2].width, quads[2].height, quads[2].draw)
+		q4 := fmt.Sprintf("Q4: x=%d y=%d w=%d h=%d draw=%t", quads[3].worldX, quads[3].worldY, quads[3].width, quads[3].height, quads[3].draw)
+
+		x, y := 300, 50
+		dx := x + 320
+		dy := y + 240
+		ctx.Window("Debugui Window", image.Rect(x, y, dx, dy), func(_ debugui.ContainerLayout) {
+			// Place all your widgets inside a ctx.Window's callback.
+			ctx.Text(q1)
+			ctx.Text(q2)
+			ctx.Text(q3)
+			ctx.Text(q4)
+
+			// Use Loop if you ever need to make a loop to make widgets.
+			const loopCount = 4
+			ctx.Loop(loopCount, func(index int) {
+				// Specify a presssing-button event handler by On.
+				ctx.Button(fmt.Sprintf("Button %d", index)).On(func() {
+					fmt.Printf("Button %d is pressed\n", index)
+				})
+			})
+		})
+		return nil
+	}); err != nil {
+		return err
+	}
+
 	if g.pause {
 		return nil
 	}
@@ -294,11 +331,13 @@ func (g *game) Draw(screen *ebiten.Image) {
 
 	g.drawSimpleUI(screen)
 
-	if true {
-		red := color.RGBA{0xff, 0, 0, 0xff}
-		drawDebugAxis(screen, float32(sc.cam.x), float32(sc.cam.y),
-			float32(sc.tiles.tilePixelWidth()), float32(sc.tiles.tilePixelHeight()), red)
-	}
+	/*
+		if true {
+			red := color.RGBA{0xff, 0, 0, 0xff}
+			drawDebugAxis(screen, float32(sc.cam.x), float32(sc.cam.y),
+				float32(sc.tiles.tilePixelWidth()), float32(sc.tiles.tilePixelHeight()), red)
+		}
+	*/
 
 	if g.debug {
 		tileDimX, tileDimY := sc.tiles.tilePixelDimensions()
@@ -316,11 +355,14 @@ func (g *game) Draw(screen *ebiten.Image) {
 				g.windowWidth, g.windowHeight,
 				drawnTiles))
 
-		colorBlue := color.RGBA{0, 0, 0xff, 0xff}
-		drawDebugRect(screen, 1, 1, float32(g.screenWidth), float32(g.screenHeight), colorBlue)
+		//colorBlue := color.RGBA{0, 0, 0xff, 0xff}
+		//drawDebugRect(screen, 1, 1, float32(g.screenWidth), float32(g.screenHeight), colorBlue)
+
+		g.debugui.Draw(screen)
 	}
 }
 
+/*
 func drawDebugAxis(screen *ebiten.Image, camX, camY, width, height float32, axisColor color.RGBA) {
 
 	const lineWidth = 1
@@ -345,6 +387,7 @@ func drawDebugAxis(screen *ebiten.Image, camX, camY, width, height float32, axis
 	pathH.LineTo(width-camX, y)
 	vector.StrokePath(screen, &pathH, strokeOp, drawOp)
 }
+*/
 
 func drawDebugRect(screen *ebiten.Image, x1, y1, x2, y2 float32, borderColor color.RGBA) {
 

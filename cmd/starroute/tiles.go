@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"image/color"
 	"io"
 	"log"
 
@@ -60,7 +61,62 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 	return ts
 }
 
-func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
+type quad struct {
+	draw bool
+
+	// camera offset to draw quadrant on screen
+	// currently used only for debugging (quadrant rectangle)
+	camOffsetX, camOffsetY int
+
+	// world position to get tiles from tilemap
+	worldX, worldY int
+
+	width, height int
+}
+
+func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]quad {
+
+	tilemapWidth := ts.tilePixelWidth()
+	tilemapHeight := ts.tilePixelHeight()
+
+	widthQuads1and3 := tilemapWidth - cam.x
+	heightQuads1and2 := tilemapHeight - cam.y
+	widthQuads2and4 := screenWidth - (tilemapWidth - cam.x)
+	heightQuads3and4 := screenHeight - (tilemapHeight - cam.y)
+
+	drawQuadrant2 := cam.x+screenWidth > tilemapWidth
+	drawQuadrant3 := cam.y+screenHeight > tilemapHeight
+	drawQuadrant4 := drawQuadrant2 && drawQuadrant3
+
+	return [4]quad{
+		// quadrant 1: top-left
+		{draw: true,
+			camOffsetX: 0, camOffsetY: 0,
+			worldX: cam.x, worldY: cam.y,
+			width:  min(screenWidth, widthQuads1and3),
+			height: min(screenHeight, heightQuads1and2)},
+
+		// quadrant 2: top-right
+		{draw: drawQuadrant2,
+			camOffsetX: widthQuads1and3, camOffsetY: 0,
+			worldX: 0, worldY: cam.y,
+			width: widthQuads2and4, height: heightQuads1and2},
+
+		// quadrant 3: bottom-left
+		{draw: drawQuadrant3,
+			camOffsetX: 0, camOffsetY: heightQuads1and2,
+			worldX: cam.x, worldY: 0,
+			width: widthQuads1and3, height: heightQuads3and4},
+
+		// quadrant 4: bottom-right
+		{draw: drawQuadrant4,
+			camOffsetX: widthQuads1and3, camOffsetY: heightQuads1and2,
+			worldX: 0, worldY: 0,
+			width: widthQuads2and4, height: heightQuads3and4},
+	}
+}
+
+func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
 	//tileSize := ts.tileSize
 
 	// Draw each tile with each DrawImage call.
@@ -96,50 +152,62 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
 		// quadrant 3: when part of the view is beyond the bottom edge of the tilemap
 		// quadrant 4: when part of the view is beyond both the right and bottom edges of the tilemap
 
+		quads := ts.getQuadrants(cam, screenWidth, screenHeight)
+
+		for _, q := range quads {
+			if q.draw {
+				sum += ts.drawQuadrant(screen,
+					q.worldX, q.worldY,
+					q.width, q.height)
+			}
+		}
+
+		if debug {
+			yellow := color.RGBA{0xff, 0xff, 0x00, 0xff}
+			red := color.RGBA{0xff, 0x00, 0x00, 0xff}
+			green := color.RGBA{0x00, 0xff, 0x00, 0xff}
+			blue := color.RGBA{0x00, 0x00, 0xff, 0xff}
+			colors := []color.RGBA{
+				yellow,
+				red,
+				green,
+				blue,
+			}
+			for i, q := range quads {
+				if q.draw {
+					drawDebugRect(screen,
+						float32(1+q.camOffsetX), float32(1+q.camOffsetY),
+						float32(q.camOffsetX+q.width), float32(q.camOffsetY+q.height),
+						colors[i])
+				}
+			}
+		}
+
 	} else {
 		// non-cyclic
 
-		ts.drawQuadrant(screen, cam.x, cam.y, screenWidth, screenHeight)
-		/*
-			for _, l := range ts.layers {
-				offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
-					cam.x, cam.y, screenWidth, screenHeight)
+		sum = ts.drawQuadrant(screen,
+			cam.x, cam.y,
+			screenWidth, screenHeight)
 
-				i := offset
-				for range yAmount {
-					for range xAmount {
-						t := l[i]
+		if debug {
+			yellow := color.RGBA{0xff, 0xff, 0x00, 0xff}
+			const camOffsetX = 0
+			const camOffsetY = 0
+			drawDebugRect(screen,
+				float32(1+camOffsetX), float32(1+camOffsetY),
+				float32(camOffsetX+screenWidth), float32(camOffsetY+screenHeight),
+				yellow)
+		}
 
-						op := &ebiten.DrawImageOptions{}
-						// screenX,screenY is the position on the screen where the tile must be drawn
-						// i % xCount gives the column of the tile in the tile layer
-						// i / xCount gives the row of the tile in the tile layer
-						// We translate by -cam.x and -cam.y to account for the camera position
-						screenX := (i % xCount) * tileSize
-						screenY := (i / xCount) * tileSize
-						op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
-
-						// sx,sy is the position within the tiles image where the tile graphic is located
-						// t % tileImageXCount gives the column of the tile in the tiles image
-						// t / tileImageXCount gives the row of the tile in the tiles image
-						sx := (t % tileImageXCount) * tileSize
-						sy := (t / tileImageXCount) * tileSize
-						subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-						screen.DrawImage(subImage, op)
-
-						sum++
-						i++
-					}
-					i += xCount - xAmount
-				}
-			}
-		*/
 	} // non-cyclic
 
 	return sum
 }
 
-func (ts *tiles) drawQuadrant(screen *ebiten.Image, beginX, beginY, width, height int) int {
+func (ts *tiles) drawQuadrant(screen *ebiten.Image,
+	worldX, worldY, width, height int) int {
+
 	var sum int
 
 	tileSize := ts.tileSize
@@ -148,7 +216,7 @@ func (ts *tiles) drawQuadrant(screen *ebiten.Image, beginX, beginY, width, heigh
 
 	for _, l := range ts.layers {
 		offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
-			beginX, beginY, width, height)
+			worldX, worldY, width, height)
 
 		i := offset
 		for range yAmount {
@@ -162,7 +230,7 @@ func (ts *tiles) drawQuadrant(screen *ebiten.Image, beginX, beginY, width, heigh
 				// We translate by -cam.x and -cam.y to account for the camera position
 				screenX := (i % xCount) * tileSize
 				screenY := (i / xCount) * tileSize
-				op.GeoM.Translate(float64(screenX-beginX), float64(screenY-beginY))
+				op.GeoM.Translate(float64(screenX-worldX), float64(screenY-worldY))
 
 				// sx,sy is the position within the tiles image where the tile graphic is located
 				// t % tileImageXCount gives the column of the tile in the tiles image
@@ -178,6 +246,13 @@ func (ts *tiles) drawQuadrant(screen *ebiten.Image, beginX, beginY, width, heigh
 			i += xCount - xAmount
 		}
 	}
+
+	/*
+		if debug {
+			drawDebugRect(screen, float32(1+beginX-camX), float32(1+beginY-camY),
+				float32(beginX+width-camX), float32(beginY+height-camY), debugColor)
+		}
+	*/
 
 	return sum
 }

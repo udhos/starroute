@@ -100,7 +100,7 @@ func (sc *scene) update() {
 }
 
 func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
-	countTiles := sc.tiles.draw(screen, sc.cam)
+	countTiles := sc.tiles.draw(screen, sc.cam, debug)
 
 	// Draw each sprite.
 	// DrawImage can be called many many times, but in the implementation,

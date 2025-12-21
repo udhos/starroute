@@ -49,3 +49,5 @@ Highest value minerals in the galaxy
 - Kenney Assets: https://kenney.nl/
 
 - Ebiten UI: https://ebitenui.github.io
+
+- Debug UI: https://github.com/ebitengine/debugui
