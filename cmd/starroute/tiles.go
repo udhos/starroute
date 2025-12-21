@@ -147,12 +147,13 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool, quads *[4]q
 		// cyclic
 
 		for _, q := range quads {
-			if q.draw {
-				sum += ts.drawQuadrant(screen,
-					q.worldX, q.worldY,
-					q.width, q.height,
-					q.camOffsetX, q.camOffsetY)
+			if !q.draw {
+				continue
 			}
+			sum += ts.drawQuadrant(screen,
+				q.worldX, q.worldY,
+				q.width, q.height,
+				q.camOffsetX, q.camOffsetY)
 		}
 
 		if debug {

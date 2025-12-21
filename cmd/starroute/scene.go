@@ -116,14 +116,39 @@ func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
 	// For more detail, see:
 	// https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
 
-	camX := float64(sc.cam.x)
-	camY := float64(sc.cam.y)
+	// For cyclic camera, sprites must be drawn once per
+	// visible quadrant using the quadrant's world origin and cam offset so
+	// they appear in wrapped positions.
+	if sc.cam.cyclic {
+		for _, q := range quads {
+			if !q.draw {
+				continue
+			}
+			// camX/camY expected by sprite.draw are subtracted from sprite
+			// world coordinates. To achieve the same placement used for
+			// tiles (screen = world - worldX + camOffset), pass
+			// cam = worldX - camOffset.
+			camX := float64(q.worldX - q.camOffsetX)
+			camY := float64(q.worldY - q.camOffsetY)
 
-	var op ebiten.DrawImageOptions
+			var op ebiten.DrawImageOptions
+			for i := 0; i < len(sc.sprites); i++ {
+				op.GeoM.Reset()
+				sc.sprites[i].draw(op, screen, camX, camY, debug)
+			}
+		}
+	} else {
+		// For non-cyclic camera draw once.
 
-	for i := 0; i < len(sc.sprites); i++ {
-		op.GeoM.Reset()
-		sc.sprites[i].draw(op, screen, camX, camY, debug)
+		camX := float64(sc.cam.x)
+		camY := float64(sc.cam.y)
+
+		var op ebiten.DrawImageOptions
+
+		for i := 0; i < len(sc.sprites); i++ {
+			op.GeoM.Reset()
+			sc.sprites[i].draw(op, screen, camX, camY, debug)
+		}
 	}
 
 	return countTiles
