@@ -126,6 +126,11 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 
 	scene3 := newScene(g, ts3, sceneTrack3, audioContext, cyclicCamera, centralizeCamera)
+
+	// add a sprite close to top-left corner
+	scene3.addSprite(50, 50, -oneQuarter, ebitenImage)
+
+	// add a sprite at center of tilemap
 	x := scene3.tiles.tilePixelWidth() / 2
 	y := scene3.tiles.tilePixelHeight() / 2
 	scene3.addSprite(float64(x), float64(y), -oneQuarter, ebitenImage)

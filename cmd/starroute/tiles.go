@@ -61,7 +61,7 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 }
 
 func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
-	tileSize := ts.tileSize
+	//tileSize := ts.tileSize
 
 	// Draw each tile with each DrawImage call.
 	// As the source images of all DrawImage calls are always same,
@@ -69,26 +69,10 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
 	// For more detail, see https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
 
 	// number of tiles per row defined in the tile layer
-	xCount := ts.tileLayerXCount
+	//xCount := ts.tileLayerXCount
 
 	// number of tiles in the tiles image
-	tileImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
-
-	/*
-		for _, l := range ts.layers {
-			for i, t := range l {
-				op := &ebiten.DrawImageOptions{}
-				screenX := (i % xCount) * tileSize
-				screenY := (i / xCount) * tileSize
-				op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
-
-				sx := (t % tileImageXCount) * tileSize
-				sy := (t / tileImageXCount) * tileSize
-				subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-				screen.DrawImage(subImage, op)
-			}
-		}
-	*/
+	//tileImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
 
 	screenWidth := screen.Bounds().Dx()
 	screenHeight := screen.Bounds().Dy()
@@ -98,35 +82,102 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera) int {
 	if cam.cyclic {
 		// cyclic
 
+		// world size is given by tilemap size in pixels: tilePixelWidth(), tilePixelHeight()
+		// every tile is tileSize x tileSize pixels
+		// world width in tiles is tileLayerXCount
+		// screenWidth,screenHeight is screen dimensions in pixels
+		// cam gives the viewport coordinates (region of the world drawn on the screen) in pixels
+		// a tile value in a layer gives the index of the tile graphic in the tiles image,
+		// encoded as tileX + tileY*tileImageXCount
+
+		// the cyclic camera is drawn in 4 quadrants to cover all cases
+		// quadrant 1: always drawn
+		// quadrant 2: when part of the view is beyond the right edge of the tilemap
+		// quadrant 3: when part of the view is beyond the bottom edge of the tilemap
+		// quadrant 4: when part of the view is beyond both the right and bottom edges of the tilemap
+
 	} else {
 		// non-cyclic
 
-		for _, l := range ts.layers {
-			offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
-				cam.x, cam.y, screenWidth, screenHeight)
+		ts.drawQuadrant(screen, cam.x, cam.y, screenWidth, screenHeight)
+		/*
+			for _, l := range ts.layers {
+				offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
+					cam.x, cam.y, screenWidth, screenHeight)
 
-			i := offset
-			for range yAmount {
-				for range xAmount {
-					t := l[i]
+				i := offset
+				for range yAmount {
+					for range xAmount {
+						t := l[i]
 
-					op := &ebiten.DrawImageOptions{}
-					screenX := (i % xCount) * tileSize
-					screenY := (i / xCount) * tileSize
-					op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
+						op := &ebiten.DrawImageOptions{}
+						// screenX,screenY is the position on the screen where the tile must be drawn
+						// i % xCount gives the column of the tile in the tile layer
+						// i / xCount gives the row of the tile in the tile layer
+						// We translate by -cam.x and -cam.y to account for the camera position
+						screenX := (i % xCount) * tileSize
+						screenY := (i / xCount) * tileSize
+						op.GeoM.Translate(float64(screenX-cam.x), float64(screenY-cam.y))
 
-					sx := (t % tileImageXCount) * tileSize
-					sy := (t / tileImageXCount) * tileSize
-					subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-					screen.DrawImage(subImage, op)
+						// sx,sy is the position within the tiles image where the tile graphic is located
+						// t % tileImageXCount gives the column of the tile in the tiles image
+						// t / tileImageXCount gives the row of the tile in the tiles image
+						sx := (t % tileImageXCount) * tileSize
+						sy := (t / tileImageXCount) * tileSize
+						subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+						screen.DrawImage(subImage, op)
 
-					sum++
-					i++
+						sum++
+						i++
+					}
+					i += xCount - xAmount
 				}
-				i += xCount - xAmount
 			}
-		}
+		*/
 	} // non-cyclic
+
+	return sum
+}
+
+func (ts *tiles) drawQuadrant(screen *ebiten.Image, beginX, beginY, width, height int) int {
+	var sum int
+
+	tileSize := ts.tileSize
+	xCount := ts.tileLayerXCount
+	tileImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
+
+	for _, l := range ts.layers {
+		offset, xAmount, yAmount := findTilemapWindow(len(l), ts.tileLayerXCount, ts.tileSize,
+			beginX, beginY, width, height)
+
+		i := offset
+		for range yAmount {
+			for range xAmount {
+				t := l[i]
+
+				op := &ebiten.DrawImageOptions{}
+				// screenX,screenY is the position on the screen where the tile must be drawn
+				// i % xCount gives the column of the tile in the tile layer
+				// i / xCount gives the row of the tile in the tile layer
+				// We translate by -cam.x and -cam.y to account for the camera position
+				screenX := (i % xCount) * tileSize
+				screenY := (i / xCount) * tileSize
+				op.GeoM.Translate(float64(screenX-beginX), float64(screenY-beginY))
+
+				// sx,sy is the position within the tiles image where the tile graphic is located
+				// t % tileImageXCount gives the column of the tile in the tiles image
+				// t / tileImageXCount gives the row of the tile in the tiles image
+				sx := (t % tileImageXCount) * tileSize
+				sy := (t / tileImageXCount) * tileSize
+				subImage := ts.tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+				screen.DrawImage(subImage, op)
+
+				sum++
+				i++
+			}
+			i += xCount - xAmount
+		}
+	}
 
 	return sum
 }
