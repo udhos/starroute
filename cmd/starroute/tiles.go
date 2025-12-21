@@ -64,11 +64,10 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 type quad struct {
 	draw bool
 
-	// camera offset to draw quadrant on screen
-	// currently used only for debugging (quadrant rectangle)
+	// quadrant offset relative to camera
 	camOffsetX, camOffsetY int
 
-	// world position to get tiles from tilemap
+	// quadrant world position to get tiles from tilemap
 	worldX, worldY int
 
 	width, height int
@@ -117,18 +116,11 @@ func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]qua
 }
 
 func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
-	//tileSize := ts.tileSize
 
 	// Draw each tile with each DrawImage call.
 	// As the source images of all DrawImage calls are always same,
 	// this rendering is done very efficiently.
 	// For more detail, see https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#Image.DrawImage
-
-	// number of tiles per row defined in the tile layer
-	//xCount := ts.tileLayerXCount
-
-	// number of tiles in the tiles image
-	//tileImageXCount := ts.tilesImage.Bounds().Dx() / tileSize
 
 	screenWidth := screen.Bounds().Dx()
 	screenHeight := screen.Bounds().Dy()
@@ -158,7 +150,8 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
 			if q.draw {
 				sum += ts.drawQuadrant(screen,
 					q.worldX, q.worldY,
-					q.width, q.height)
+					q.width, q.height,
+					q.camOffsetX, q.camOffsetY)
 			}
 		}
 
@@ -186,14 +179,16 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
 	} else {
 		// non-cyclic
 
+		const camOffsetX = 0
+		const camOffsetY = 0
+
 		sum = ts.drawQuadrant(screen,
 			cam.x, cam.y,
-			screenWidth, screenHeight)
+			screenWidth, screenHeight,
+			camOffsetX, camOffsetY)
 
 		if debug {
 			yellow := color.RGBA{0xff, 0xff, 0x00, 0xff}
-			const camOffsetX = 0
-			const camOffsetY = 0
 			drawDebugRect(screen,
 				float32(1+camOffsetX), float32(1+camOffsetY),
 				float32(camOffsetX+screenWidth), float32(camOffsetY+screenHeight),
@@ -206,7 +201,9 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
 }
 
 func (ts *tiles) drawQuadrant(screen *ebiten.Image,
-	worldX, worldY, width, height int) int {
+	worldX, worldY,
+	width, height,
+	camOffsetX, camOffsetY int) int {
 
 	var sum int
 
@@ -227,10 +224,12 @@ func (ts *tiles) drawQuadrant(screen *ebiten.Image,
 				// screenX,screenY is the position on the screen where the tile must be drawn
 				// i % xCount gives the column of the tile in the tile layer
 				// i / xCount gives the row of the tile in the tile layer
-				// We translate by -cam.x and -cam.y to account for the camera position
+				// We translate by -worldX and -worldY to account for the camera
+				// position, and add the quadrant camera offset so this quadrant
+				// is drawn at the correct place on the screen when wrapping.
 				screenX := (i % xCount) * tileSize
 				screenY := (i / xCount) * tileSize
-				op.GeoM.Translate(float64(screenX-worldX), float64(screenY-worldY))
+				op.GeoM.Translate(float64(screenX-worldX+camOffsetX), float64(screenY-worldY+camOffsetY))
 
 				// sx,sy is the position within the tiles image where the tile graphic is located
 				// t % tileImageXCount gives the column of the tile in the tiles image
