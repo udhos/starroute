@@ -152,7 +152,7 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 // Update is called every tick. Tick is a time unit for logical updating.
 // The default value is 1/60 [s], then Update is called 60 times per second by
 // default (i.e. an Ebitengine game works in 60 ticks-per-second).
-func (g *game) Update() error {
+func (g *game) Update() (err error) {
 
 	//
 	// handle burst of keys
@@ -253,7 +253,7 @@ func (g *game) Update() error {
 
 	g.uiCoord = g.getCurrentScene().getWorldCoordinates()
 
-	if _, err := g.debugui.Update(func(ctx *debugui.Context) error {
+	if _, e := g.debugui.Update(func(ctx *debugui.Context) error {
 
 		sc := g.getCurrentScene()
 		quads := sc.tiles.getQuadrants(sc.cam, g.screenWidth, g.screenHeight)
@@ -282,17 +282,17 @@ func (g *game) Update() error {
 			})
 		})
 		return nil
-	}); err != nil {
-		return err
+	}); e != nil {
+		err = e
 	}
 
 	if g.pause {
-		return nil
+		return
 	}
 
 	g.getCurrentScene().update()
 
-	return nil
+	return
 }
 
 func (g *game) getCurrentScene() *scene {
