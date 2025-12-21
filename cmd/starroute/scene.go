@@ -160,8 +160,16 @@ func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
 func (sc *scene) getWorldCoordinates() string {
 	camX := sc.cam.x
 	camY := sc.cam.y
-	camXmax := sc.cam.maxX()
-	camYmax := sc.cam.maxY()
+
+	var camXmax, camYmax int
+	if sc.cam.cyclic {
+		camXmax = sc.cam.cyclicMaxX()
+		camYmax = sc.cam.cyclicMaxY()
+	} else {
+		camXmax = sc.cam.maxX()
+		camYmax = sc.cam.maxY()
+	}
+
 	camXmid := camXmax / 2
 	camYmid := camYmax / 2
 
