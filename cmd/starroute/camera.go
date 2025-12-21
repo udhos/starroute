@@ -74,22 +74,20 @@ func (c *camera) stepRight() {
 
 // maxX returns the maximum x coordinate the camera can reach.
 // maxX restricts the non-cyclic camera within the tilemap.
+// for cyclic cameras, it returns the rightmost pixel coordinate before resetting to 0.
 func (c *camera) maxX() int {
+	if c.cyclic {
+		return c.sc.tiles.tilePixelWidth() - 1
+	}
 	return c.sc.tiles.tilePixelWidth() - c.sc.g.screenWidth
 }
 
 // maxY returns the maximum y coordinate the camera can reach.
 // maxY restricts the non-cyclic camera within the tilemap.
+// for cyclic cameras, it returns the bottommost pixel coordinate before resetting to 0.
 func (c *camera) maxY() int {
+	if c.cyclic {
+		return c.sc.tiles.tilePixelHeight() - 1
+	}
 	return c.sc.tiles.tilePixelHeight() - c.sc.g.screenHeight
-}
-
-// maxX returns the maximum x coordinate the cyclic camera can reach before resetting to 0.
-func (c *camera) cyclicMaxX() int {
-	return c.sc.tiles.tilePixelWidth() - 1
-}
-
-// maxY returns the maximum y coordinate the cyclic camera can reach before resetting to 0.
-func (c *camera) cyclicMaxY() int {
-	return c.sc.tiles.tilePixelHeight() - 1
 }
