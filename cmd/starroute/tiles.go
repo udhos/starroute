@@ -61,6 +61,7 @@ func newTiles(r io.Reader, tileSize int, layers [][]int, tileLayerXCount int) *t
 	return ts
 }
 
+// quad represents one of the four quadrants needed to draw with a cyclic camera.
 type quad struct {
 	draw bool
 
@@ -73,6 +74,21 @@ type quad struct {
 	width, height int
 }
 
+// getQuadrants returns the four quadrants needed to draw with a cyclic camera.
+//
+// world size is given by tilemap size in pixels: tilePixelWidth(), tilePixelHeight()
+// every tile is tileSize x tileSize pixels
+// world width in tiles is tileLayerXCount
+// screenWidth,screenHeight is screen dimensions in pixels
+// cam gives the viewport coordinates (region of the world drawn on the screen) in pixels
+// a tile value in a layer gives the index of the tile graphic in the tiles image,
+// encoded as tileX + tileY*tileImageXCount
+//
+// the cyclic camera is drawn in 4 quadrants to cover all cases
+// quadrant 1: always drawn
+// quadrant 2: when part of the view is beyond the right edge of the tilemap
+// quadrant 3: when part of the view is beyond the bottom edge of the tilemap
+// quadrant 4: when part of the view is beyond both the right and bottom edges of the tilemap
 func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]quad {
 
 	tilemapWidth := ts.tilePixelWidth()
@@ -115,7 +131,7 @@ func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]qua
 	}
 }
 
-func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
+func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool, quads *[4]quad) int {
 
 	// Draw each tile with each DrawImage call.
 	// As the source images of all DrawImage calls are always same,
@@ -129,22 +145,6 @@ func (ts *tiles) draw(screen *ebiten.Image, cam *camera, debug bool) int {
 
 	if cam.cyclic {
 		// cyclic
-
-		// world size is given by tilemap size in pixels: tilePixelWidth(), tilePixelHeight()
-		// every tile is tileSize x tileSize pixels
-		// world width in tiles is tileLayerXCount
-		// screenWidth,screenHeight is screen dimensions in pixels
-		// cam gives the viewport coordinates (region of the world drawn on the screen) in pixels
-		// a tile value in a layer gives the index of the tile graphic in the tiles image,
-		// encoded as tileX + tileY*tileImageXCount
-
-		// the cyclic camera is drawn in 4 quadrants to cover all cases
-		// quadrant 1: always drawn
-		// quadrant 2: when part of the view is beyond the right edge of the tilemap
-		// quadrant 3: when part of the view is beyond the bottom edge of the tilemap
-		// quadrant 4: when part of the view is beyond both the right and bottom edges of the tilemap
-
-		quads := ts.getQuadrants(cam, screenWidth, screenHeight)
 
 		for _, q := range quads {
 			if q.draw {

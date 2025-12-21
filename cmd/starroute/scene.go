@@ -100,7 +100,14 @@ func (sc *scene) update() {
 }
 
 func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
-	countTiles := sc.tiles.draw(screen, sc.cam, debug)
+
+	var quads [4]quad
+
+	if sc.cam.cyclic {
+		quads = sc.tiles.getQuadrants(sc.cam, screen.Bounds().Dx(), screen.Bounds().Dy())
+	}
+
+	countTiles := sc.tiles.draw(screen, sc.cam, debug, &quads)
 
 	// Draw each sprite.
 	// DrawImage can be called many many times, but in the implementation,
