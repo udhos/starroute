@@ -94,13 +94,16 @@ func (ts *tiles) getQuadrants(cam *camera, screenWidth, screenHeight int) [4]qua
 	tilemapWidth := ts.tilePixelWidth()
 	tilemapHeight := ts.tilePixelHeight()
 
-	widthQuads1and3 := min(screenWidth, tilemapWidth-cam.x)
-	heightQuads1and2 := min(screenHeight, tilemapHeight-cam.y)
-	widthQuads2and4 := screenWidth - (tilemapWidth - cam.x)
-	heightQuads3and4 := screenHeight - (tilemapHeight - cam.y)
+	tilemapWidthMinusCam := tilemapWidth - cam.x
+	tilemapHeightMinusCam := tilemapHeight - cam.y
 
-	drawQuadrant2 := cam.x+screenWidth > tilemapWidth
-	drawQuadrant3 := cam.y+screenHeight > tilemapHeight
+	widthQuads1and3 := min(screenWidth, tilemapWidthMinusCam)
+	heightQuads1and2 := min(screenHeight, tilemapHeightMinusCam)
+	widthQuads2and4 := screenWidth - tilemapWidthMinusCam
+	heightQuads3and4 := screenHeight - tilemapHeightMinusCam
+
+	drawQuadrant2 := screenWidth > tilemapWidthMinusCam
+	drawQuadrant3 := screenHeight > tilemapHeightMinusCam
 	drawQuadrant4 := drawQuadrant2 && drawQuadrant3
 
 	return [4]quad{
