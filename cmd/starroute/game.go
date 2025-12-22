@@ -125,7 +125,7 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	// scene0: start screen
 	var scene0 *scene
 	{
-		const tileEdgeCount = 100                                      // 1600x1600
+		const tileEdgeCount = 120                                      // 1920x1920
 		layers := [][]int{generateLayerSingleTile(tileEdgeCount, 247)} // 247=dirty
 		ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 		scene0 = newScene(g, ts, sceneTrack1, audioContext, cyclicCamera,
@@ -149,7 +149,7 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 
 	var scene3 *scene
 	{
-		const tileEdgeCount = 100 // 100x100=10000
+		const tileEdgeCount = 120 // 1920x1920
 		layers := [][]int{generateLayer(tileEdgeCount)}
 		ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 
@@ -168,7 +168,7 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	// scene4: first scene
 	var scene4 *scene
 	{
-		const tileEdgeCount = 100 // 100x100=10000
+		const tileEdgeCount = 120 // 1920x1920
 		layers := [][]int{generateLayer(tileEdgeCount)}
 		ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 

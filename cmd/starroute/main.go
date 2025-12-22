@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -11,6 +12,8 @@ import (
 )
 
 func main() {
+
+	fmt.Println("hint for fullscreen: starroute -resize=full -both 1920x1080")
 
 	var pause bool
 	var resize string
@@ -34,13 +37,15 @@ func main() {
 		windowWidth, windowHeight = parseDim("window", both)
 	}
 
+	isFull := strings.HasPrefix("fullscreen", resize)
+
 	var resizeMode ebiten.WindowResizingModeType
 	switch {
 	case resize == "on":
 		resizeMode = ebiten.WindowResizingModeEnabled
 	case resize == "off":
 		resizeMode = ebiten.WindowResizingModeDisabled
-	case strings.HasPrefix("fullscreen", resize):
+	case isFull:
 		resizeMode = ebiten.WindowResizingModeOnlyFullscreenEnabled
 	default:
 		log.Fatalf("invalid window resize mode: %s", resize)
@@ -48,7 +53,6 @@ func main() {
 
 	log.Printf("Window size: %dx%d", windowWidth, windowHeight)
 
-	isFull := resize == "full"
 	ebiten.SetWindowTitle("Star Route")
 	ebiten.SetWindowDecorated(!isFull)
 	ebiten.SetFullscreen(isFull)

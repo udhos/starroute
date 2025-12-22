@@ -1,5 +1,17 @@
 # starroute
 
+# run
+
+```bash
+starroute
+```
+
+# fullscreen
+
+```bash
+starroute -resize=full -both 1920x1080
+```
+
 # Minerals
 
 Highest value minerals in the galaxy
