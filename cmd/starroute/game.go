@@ -176,8 +176,8 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 			showCoord, sceneOptions{})
 
 		// add a sprite at center of tilemap
-		x := scene3.tiles.tilePixelWidth() / 2
-		y := scene3.tiles.tilePixelHeight() / 2
+		x := scene4.tiles.tilePixelWidth() / 2
+		y := scene4.tiles.tilePixelHeight() / 2
 		scene4.addSprite(float64(x), float64(y), -oneQuarter, ebitenImage)
 	}
 
@@ -283,6 +283,10 @@ func sceneUpdateInputDefault(sc *scene) {
 		}
 	}
 
+	if inpututil.IsKeyJustReleased(ebiten.KeyI) {
+		sc.cam.centralize()
+		log.Print("Cam centralized")
+	}
 	if inpututil.IsKeyJustReleased(ebiten.KeyO) {
 		g.debug = !g.debug
 		log.Printf("Debug: %t", g.debug)
