@@ -125,8 +125,8 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	// scene0: start screen
 	var scene0 *scene
 	{
-		const tileEdgeCount = 10 // 10x10=100
-		layers := [][]int{generateLayer(tileEdgeCount)}
+		const tileEdgeCount = 100                                      // 1600x1600
+		layers := [][]int{generateLayerSingleTile(tileEdgeCount, 247)} // 247=dirty
 		ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 		scene0 = newScene(g, ts, sceneTrack1, audioContext, cyclicCamera,
 			centralizeCamera, false,
