@@ -33,8 +33,11 @@ type game struct {
 	pause bool
 	debug bool
 
-	scenes       []*scene
-	sceneCurrent int
+	scenes           []*scene
+	sceneStart       int
+	sceneCurrent     int
+	sceneResume      int
+	sceneUpdateInput func(sc *scene)
 
 	defaultScreenWidth  int
 	defaultScreenHeight int
@@ -53,7 +56,7 @@ type game struct {
 	//headerLbl     *widget.Text
 	//coordinateLbl   *widget.Text
 	mplusFaceSource *text.GoTextFaceSource
-	uiCoord         string
+	//uiCoord         string
 
 	debugui debugui.DebugUI
 }
@@ -99,10 +102,11 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 		screenWidth:  defaultScreenWidth,
 		screenHeight: defaultScreenHeight,
 
+		sceneStart:   0,
 		sceneCurrent: 0,
 
 		mplusFaceSource: mplusFaceSource,
-		uiCoord:         "? ?",
+		//uiCoord:         "? ?",
 	}
 
 	// This adds the root container to the UI, so that it will be rendered.
@@ -115,33 +119,73 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	const (
 		cyclicCamera     = false
 		centralizeCamera = false
+		showCoord        = true
 	)
 
-	scene1 := newScene(g, ts, sceneTrack1, audioContext, cyclicCamera, centralizeCamera)
+	// scene0: start screen
+	var scene0 *scene
+	{
+		const tileEdgeCount = 10 // 10x10=100
+		layers := [][]int{generateLayer(tileEdgeCount)}
+		ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
+		scene0 = newScene(g, ts, sceneTrack1, audioContext, cyclicCamera,
+			centralizeCamera, false,
+			sceneOptions{banner: "press: [p]lay or [q]uit"})
+	}
+
+	// scene1: hard-coded tilemap
+	scene1 := newScene(g, ts, sceneTrack1, audioContext, cyclicCamera,
+		centralizeCamera, showCoord, sceneOptions{})
 	scene1.addSprite(50, 50, 0, ebitenImage)
 	scene1.addSprite(100, 100, rotationScene1Sprite2, ebitenImage)
 
-	scene2 := newScene(g, ts, sceneTrack2, audioContext, cyclicCamera, centralizeCamera)
+	// scene2: hard-coded tilemap
+	scene2 := newScene(g, ts, sceneTrack2, audioContext, cyclicCamera,
+		centralizeCamera, showCoord, sceneOptions{})
 	scene2.addSprite(150, 150, 0, ebitenImage)
 	scene2.addSprite(200, 200, oneQuarter, ebitenImage)
 
-	const tileEdgeCount = 100 // 100x100=10000
-	layers := [][]int{generateLayer(tileEdgeCount)}
-	ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
+	// scene3: random tilemap
 
-	scene3 := newScene(g, ts3, sceneTrack3, audioContext, cyclicCamera, centralizeCamera)
+	var scene3 *scene
+	{
+		const tileEdgeCount = 100 // 100x100=10000
+		layers := [][]int{generateLayer(tileEdgeCount)}
+		ts3 := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
 
-	// add a sprite close to top-left corner
-	scene3.addSprite(50, 50, -oneQuarter, ebitenImage)
+		scene3 = newScene(g, ts3, sceneTrack3, audioContext, cyclicCamera,
+			centralizeCamera, showCoord, sceneOptions{})
 
-	// add a sprite at center of tilemap
-	x := scene3.tiles.tilePixelWidth() / 2
-	y := scene3.tiles.tilePixelHeight() / 2
-	scene3.addSprite(float64(x), float64(y), -oneQuarter, ebitenImage)
+		// add a sprite close to top-left corner
+		scene3.addSprite(50, 50, -oneQuarter, ebitenImage)
 
-	g.scenes = []*scene{scene1, scene2, scene3}
+		// add a sprite at center of tilemap
+		x := scene3.tiles.tilePixelWidth() / 2
+		y := scene3.tiles.tilePixelHeight() / 2
+		scene3.addSprite(float64(x), float64(y), -oneQuarter, ebitenImage)
+	}
 
-	g.getCurrentScene().musicStart()
+	// scene4: first scene
+	var scene4 *scene
+	{
+		const tileEdgeCount = 100 // 100x100=10000
+		layers := [][]int{generateLayer(tileEdgeCount)}
+		ts := newTiles(bytes.NewReader(images.Tiles_png), tileSize, layers, tileEdgeCount)
+
+		scene4 = newScene(g, ts, sceneTrack1, audioContext, true, true,
+			showCoord, sceneOptions{})
+
+		// add a sprite at center of tilemap
+		x := scene3.tiles.tilePixelWidth() / 2
+		y := scene3.tiles.tilePixelHeight() / 2
+		scene4.addSprite(float64(x), float64(y), -oneQuarter, ebitenImage)
+	}
+
+	g.scenes = []*scene{scene0, scene1, scene2, scene3, scene4}
+
+	g.sceneCurrent = 4 // first scene after start screen
+
+	g.switchScene(g.sceneStart)
 
 	// See comment in game.Layout method.
 	log.Printf("Game screen size: %dx%d", g.screenWidth, g.screenHeight)
@@ -149,10 +193,41 @@ func newGame(defaultScreenWidth, defaultScreenHeight int) *game {
 	return g
 }
 
-// Update is called every tick. Tick is a time unit for logical updating.
-// The default value is 1/60 [s], then Update is called 60 times per second by
-// default (i.e. an Ebitengine game works in 60 ticks-per-second).
-func (g *game) Update() (err error) {
+func (g *game) switchScene(newScene int) {
+
+	log.Printf("switch scene to: %d", newScene)
+
+	g.getCurrentScene().musicStop()
+
+	if newScene == g.sceneStart {
+		// save current scene to resume
+		if g.sceneCurrent != g.sceneStart {
+			// but not if we are on start
+			g.sceneResume = g.sceneCurrent
+		}
+		g.sceneUpdateInput = sceneUpdateInputStart // resume or exit controls
+	} else {
+		g.sceneUpdateInput = sceneUpdateInputDefault // all controls
+	}
+	g.sceneCurrent = newScene
+
+	g.getCurrentScene().musicStart()
+}
+
+func sceneUpdateInputStart(sc *scene) {
+	g := sc.g
+	if inpututil.IsKeyJustReleased(ebiten.KeyP) {
+		g.switchScene(g.sceneResume)
+	}
+	if inpututil.IsKeyJustReleased(ebiten.KeyQ) {
+		log.Printf("Q pressed, quitting")
+		os.Exit(0)
+	}
+}
+
+func sceneUpdateInputDefault(sc *scene) {
+
+	g := sc.g
 
 	//
 	// handle burst of keys
@@ -175,8 +250,9 @@ func (g *game) Update() (err error) {
 			g.getCurrentScene().cam.stepLeft()
 			continue
 		case ebiten.KeyEscape:
-			log.Printf("ESC pressed, exiting")
-			os.Exit(0)
+			log.Printf("ESC pressed, switching to start screen")
+			g.switchScene(g.sceneStart)
+			continue
 		}
 
 		zero := p == ebiten.Key0
@@ -216,7 +292,11 @@ func (g *game) Update() (err error) {
 		log.Printf("Pause: %t", g.pause)
 	}
 	if inpututil.IsKeyJustReleased(ebiten.KeyBackspace) {
-		g.switchScene()
+		next := (g.sceneCurrent + 1) % len(g.scenes)
+		if next == g.sceneStart {
+			next = (next + 1) % len(g.scenes)
+		}
+		g.switchScene(next)
 	}
 	if inpututil.IsKeyJustReleased(ebiten.KeyPeriod) {
 		// toggle camera cyclic
@@ -251,26 +331,24 @@ func (g *game) Update() (err error) {
 		}
 	*/
 
-	g.uiCoord = g.getCurrentScene().getWorldCoordinates()
+}
+
+// Update is called every tick. Tick is a time unit for logical updating.
+// The default value is 1/60 [s], then Update is called 60 times per second by
+// default (i.e. an Ebitengine game works in 60 ticks-per-second).
+func (g *game) Update() (err error) {
+
+	g.sceneUpdateInput(g.getCurrentScene())
+
+	//g.uiCoord = g.getCurrentScene().getWorldCoordinates()
 
 	if _, e := g.debugui.Update(func(ctx *debugui.Context) error {
-
-		sc := g.getCurrentScene()
-		quads := sc.tiles.getQuadrants(sc.cam, g.screenWidth, g.screenHeight)
-		q1 := fmt.Sprintf("Q1: x=%d y=%d w=%d h=%d draw=%t", quads[0].worldX, quads[0].worldY, quads[0].width, quads[0].height, quads[0].draw)
-		q2 := fmt.Sprintf("Q2: x=%d y=%d w=%d h=%d draw=%t", quads[1].worldX, quads[1].worldY, quads[1].width, quads[1].height, quads[1].draw)
-		q3 := fmt.Sprintf("Q3: x=%d y=%d w=%d h=%d draw=%t", quads[2].worldX, quads[2].worldY, quads[2].width, quads[2].height, quads[2].draw)
-		q4 := fmt.Sprintf("Q4: x=%d y=%d w=%d h=%d draw=%t", quads[3].worldX, quads[3].worldY, quads[3].width, quads[3].height, quads[3].draw)
-
-		x, y := 300, 50
+		x, y := 350, 30
 		dx := x + 320
-		dy := y + 240
+		dy := y + 150
 		ctx.Window("Debugui Window", image.Rect(x, y, dx, dy), func(_ debugui.ContainerLayout) {
 			// Place all your widgets inside a ctx.Window's callback.
-			ctx.Text(q1)
-			ctx.Text(q2)
-			ctx.Text(q3)
-			ctx.Text(q4)
+			ctx.Text("test")
 
 			// Use Loop if you ever need to make a loop to make widgets.
 			const loopCount = 4
@@ -299,6 +377,7 @@ func (g *game) getCurrentScene() *scene {
 	return g.scenes[g.sceneCurrent]
 }
 
+/*
 func (g *game) switchScene() {
 	g.getCurrentScene().musicStop()
 
@@ -308,6 +387,7 @@ func (g *game) switchScene() {
 
 	g.getCurrentScene().musicStart()
 }
+*/
 
 // Draw is called every frame. Frame is a time unit for rendering and this
 // depends on the display's refresh rate. If the monitor's refresh rate
@@ -329,7 +409,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 
 	//g.ui.Draw(screen)
 
-	g.drawSimpleUI(screen)
+	//g.drawSimpleUI(screen)
 
 	/*
 		if true {

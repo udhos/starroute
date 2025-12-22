@@ -25,16 +25,26 @@ type scene struct {
 	audioContext *audio.Context
 	cam          *camera
 	g            *game
+	uiCoord      string
+	showCoord    bool
+	opt          sceneOptions
+}
+
+type sceneOptions struct {
+	banner string
 }
 
 func newScene(g *game, ts *tiles, musicTrack int,
 	audioContext *audio.Context, cyclicCamera,
-	centralizeCamera bool) *scene {
+	centralizeCamera, showCoord bool, opt sceneOptions) *scene {
 	sc := &scene{
 		g:            g,
 		tiles:        ts,
 		musicTrack:   musicTrack,
 		audioContext: audioContext,
+		uiCoord:      "? ?",
+		showCoord:    showCoord,
+		opt:          opt,
 	}
 	sc.cam = newCamera(sc, cyclicCamera, centralizeCamera)
 	return sc
@@ -87,6 +97,9 @@ func (sc *scene) addSprite(x, y, angleNative float64, spriteImage *ebiten.Image)
 }
 
 func (sc *scene) update() {
+
+	sc.uiCoord = sc.getWorldCoordinates()
+
 	// Update all sprites.
 	for _, spr := range sc.sprites {
 		spr.update()
@@ -150,6 +163,8 @@ func (sc *scene) draw(screen *ebiten.Image, debug bool) int {
 			sc.sprites[i].draw(op, screen, camX, camY, debug)
 		}
 	}
+
+	sc.drawSimpleUI(screen)
 
 	return countTiles
 }
